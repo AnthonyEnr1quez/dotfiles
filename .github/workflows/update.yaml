@@ -20,14 +20,14 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@main
       
       - name: Update base flake.lock
-        uses: DeterminateSystems/update-flake-lock@v22
+        uses: DeterminateSystems/update-flake-lock@v23
         with:
           token: ${{ secrets.GH_TOKEN }}
           branch: update-base-flake-lock
           pr-title: 'Update base flake.lock'
 
       - name: Update sub flake.lock
-        uses: DeterminateSystems/update-flake-lock@v22
+        uses: DeterminateSystems/update-flake-lock@v23
         with:
           token: ${{ secrets.GH_TOKEN }}
           branch: update-sub-flake-lock
