@@ -71,7 +71,7 @@ in
           owner = "olets";
           repo = "zsh-abbr";
           rev = "510cf85ce7c1a3a0cf8e81aefe83b8c79c2ae09c"; # tags/v*
-          sha256 = "sha256-BbCUYOrgAvLXydGbUqpSHgQIG5Y/F/vrslKSRKPniUQ=";
+          sha256 = "0i49wyil94jjnbmzn5rzjqdhh10yaam556yir7bz40p0x9h99c05";
           fetchSubmodules = true;
         };
         file = "zsh-abbr.plugin.zsh";
