@@ -60,3 +60,5 @@ jobs:
       - run: nix build --accept-flake-config .#darwinConfigurations.MacBook-Pro-2.config.system.build.toplevel $VERBOSE_FLAGS
 
       - run: nix build --accept-flake-config .#darwinConfigurations.damascus.config.system.build.toplevel $VERBOSE_FLAGS
+
+      - run: nix build .#devShells.aarch64-darwin.mf
