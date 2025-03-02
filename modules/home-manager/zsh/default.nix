@@ -70,8 +70,8 @@ in
         src = pkgs.fetchFromGitHub {
           owner = "olets";
           repo = "zsh-abbr";
-          rev = "2b2cd73f975380e155dd3bb24fff83d7ae68f5fc"; # tags/v*
-          sha256 = "103gnlljxjl6l2cnh5dskp6ssq1qfylw6nj5xrh7zf0wa71svs4n";
+          rev = "f9e43d78110db0a8bf8ec75ca5b101a06b1d5ce8"; # tags/v*
+          sha256 = "0pvj1mrbj66dg6nzwxcjw0821igmaakz112jcs6vlsqp1js05p49";
           fetchSubmodules = true;
         };
         file = "zsh-abbr.plugin.zsh";
