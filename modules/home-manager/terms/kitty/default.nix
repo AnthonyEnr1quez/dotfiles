@@ -27,7 +27,7 @@ in
         enable_audio_bell = "no";
         term = "xterm-256color";
 
-        open_url_with = "default"; 
+        open_url_with = "default";
         macos_titlebar_color = "background";
         macos_option_as_alt = "yes";
         macos_quit_when_last_window_closed = "yes";

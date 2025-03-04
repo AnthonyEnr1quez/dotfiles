@@ -24,7 +24,7 @@
       vscode = {
         package = pkgs.vscodium;
 
-        userSettings."editor.fontFamily" = "Hack Nerd Font Mono";
+        profiles.default.userSettings."editor.fontFamily" = "Hack Nerd Font Mono";
       };
 
       zsh.profileExtra = ''
