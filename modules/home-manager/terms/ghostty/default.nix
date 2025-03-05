@@ -13,33 +13,49 @@ in
   };
 
   config = mkIf cfg.enable {
-    programs.ghostty = {
-      enable = true;
-      package = pkgs.nur.repos.gigamonster256.ghostty-darwin;
-      enableZshIntegration = true;
-      installBatSyntax = true;
+    programs = {
+      ghostty = {
+        enable = true;
+        package = pkgs.nur.repos.gigamonster256.ghostty-darwin;
+        enableZshIntegration = true;
+        installBatSyntax = true;
 
-      settings = {
-        auto-update = "off";
-        clipboard-trim-trailing-spaces = true;
-        font-family = "Hack Nerd Font";
-        window-title-font-family = "Hack Nerd Font";
-        font-size = 18;
+        settings = {
+          auto-update = "off";
+          clipboard-trim-trailing-spaces = true;
+          font-family = "Hack Nerd Font";
+          window-title-font-family = "Hack Nerd Font";
+          font-size = 18;
 
-        macos-option-as-alt = true;
-        quit-after-last-window-closed = true;
-        scrollback-limit = 10000;
+          macos-option-as-alt = true;
+          quit-after-last-window-closed = true;
+          scrollback-limit = 10000;
 
-        theme = "catppuccin-mocha";
+          theme = "catppuccin-mocha";
 
-        # TODO tab titles
+          # custom tab titles
+          shell-integration-features = "no-title";
 
-        # does not work with full screen apps :(
-        keybind = "global:alt+space=toggle_quick_terminal";
-        quick-terminal-position = "right";
-        quick-terminal-animation-duration = 0;
-        quick-terminal-autohide = false;
+          # does not work with full screen apps :(
+          keybind = "global:alt+space=toggle_quick_terminal";
+          quick-terminal-position = "right";
+          quick-terminal-animation-duration = 0;
+          quick-terminal-autohide = false;
+        };
       };
+
+      # custom tab titles
+      zsh.initExtra = ''
+        DISABLE_AUTO_TITLE="true"
+        function precmd () {
+          echo -ne "\033]0;$(basename $PWD)\007"
+        }
+        precmd
+
+        function preexec () {
+          print -Pn "\e]0;$\a"
+        }
+      '';
     };
   };
 }
