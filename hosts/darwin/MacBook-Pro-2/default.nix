@@ -45,16 +45,8 @@
   };
 
   homebrew = {
-    taps = [
-      {
-        name = "hashicorp/tap";
-        clone_target = "https://github.com/AnthonyEnr1quez/homebrew-tap.git";
-        force_auto_update = true;
-      }
-    ];
     casks = [
       "google-drive"
-      "hashicorp-boundary-desktop"
       "linear-linear"
       "notion"
       "1password"
