@@ -4,7 +4,7 @@
       packages = with pkgs; [
         gh
         wget
-        terraform
+        opentofu
         blackbox
         jetbrains.goland
         jq
