@@ -111,8 +111,8 @@ in
         src = pkgs.fetchFromGitHub {
           owner = "jonmosco";
           repo = "kube-ps1";
-          rev = "b2286b63edf513ec0bfc425b55ceaffcf7e37b48"; # master
-          sha256 = "0x0c0si0p45mmnjq6xkppdjpg9m32vp0cdx4d9bl5xdr67mmd9rr";
+          rev = "b6f5822a3175f0ccf24b1e9931824554c9476ac1"; # master
+          sha256 = "12s5x30scy9ldf40p3p7bflgg9b7pcl755g5fbzzjpsrmx3kb0rk";
         };
         file = "kube-ps1.sh";
       }
