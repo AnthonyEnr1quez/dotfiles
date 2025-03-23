@@ -22,6 +22,7 @@
       "balenaetcher"
       "bitwarden"
       # "blobsaver"
+      "docker"
       "flux"
       "firefox@developer-edition"
       "geekbench"

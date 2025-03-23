@@ -14,7 +14,6 @@
 
     casks = [
       "alt-tab"
-      "docker"
       "logi-options+"
       "postman"
     ];

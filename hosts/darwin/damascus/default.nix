@@ -20,6 +20,7 @@
       "balenaetcher"
       "bitwarden"
       "mullvadvpn"
+      "orbstack"
       "signal"
     ];
   };
