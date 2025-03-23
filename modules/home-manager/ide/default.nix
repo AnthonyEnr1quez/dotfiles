@@ -19,6 +19,8 @@
       extensions = with pkgs.vscode-extensions; [
         bbenoist.nix
         golang.go
+        github.copilot
+        github.copilot-chat
         mkhl.direnv
         astro-build.astro-vscode
         ms-kubernetes-tools.vscode-kubernetes-tools
