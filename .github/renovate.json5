@@ -7,6 +7,7 @@
     ":disableRateLimiting",
     ":semanticCommits",
     ":timezone(America/Chicago)",
+    "github>AnthonyEnr1quez/dotfiles//.github/renovate/autoMerge.json5",
     "github>AnthonyEnr1quez/dotfiles//.github/renovate/semanticCommits.json5"
   ],
   platform: "github",
