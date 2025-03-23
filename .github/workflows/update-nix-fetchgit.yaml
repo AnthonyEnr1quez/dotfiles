@@ -15,29 +15,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - uses: actions/create-github-app-token@v1.11.6
+      - uses: actions/create-github-app-token@21cfef2b496dd8ef5b904c159339626a10ad380e # v1.11.6
         id: generate-token
         with:
           app-id: ${{ secrets.CPR_APP_ID }}
           private-key: ${{ secrets.CPR_APP_PRIVATE_KEY }}
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v30
+        uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - uses: workflow/nix-shell-action@v3
+      - uses: workflow/nix-shell-action@608eb20401e12c82b204e8e2c6a8b0eebfb5407c # v3
         with:
           packages: fd,update-nix-fetchgit
           script: |
             fd .nix --exec update-nix-fetchgit --only-commented || true
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
         with:
           token: ${{ steps.generate-token.outputs.token }}
           commit-message: Update fetchgit* refs
