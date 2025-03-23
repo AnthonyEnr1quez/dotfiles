@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended",
     "helpers:pinGitHubActionDigests",
+    ":configMigration",
     ":disableRateLimiting",
     ":semanticCommits",
     ":timezone(America/Chicago)",
