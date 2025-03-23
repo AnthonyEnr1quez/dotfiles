@@ -10,20 +10,14 @@
     "github>AnthonyEnr1quez/dotfiles//.github/renovate/autoMerge.json5",
     "github>AnthonyEnr1quez/dotfiles//.github/renovate/semanticCommits.json5"
   ],
-  platform: "github",
-  repositories: ["AnthonyEnr1quez/dotfiles"],
-  username: "anthonyenr1quez-renovate[bot]",
-  gitAuthor: "anthonyenr1quez-renovate[bot] <117547040+anthonyenr1quez-renovate[bot]@users.noreply.github.com>",
-  onboarding: false,
-  requireConfig: "optional",
   commitBodyTable: true,
-  nix: {
-    enabled: true
-  },
   lockFileMaintenance: {
     enabled: true,
     schedule: [
       "at any time"
     ]
+  },
+  nix: {
+    enabled: true
   }
 }
