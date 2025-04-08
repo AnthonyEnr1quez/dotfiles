@@ -85,7 +85,7 @@
                     nur.overlays.default
                   ];
                   home-manager.sharedModules = [
-                    catppuccin.homeManagerModules.catppuccin
+                    catppuccin.homeModules.catppuccin
                     mac-app-util.homeManagerModules.default
                     nur.modules.homeManager.default
                   ];
