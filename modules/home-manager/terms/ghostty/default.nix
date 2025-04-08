@@ -29,7 +29,7 @@ in
 
           macos-option-as-alt = true;
           quit-after-last-window-closed = true;
-          scrollback-limit = 10000;
+          scrollback-limit = 100000000;
 
           theme = "catppuccin-mocha";
 
