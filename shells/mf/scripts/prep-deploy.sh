@@ -2,7 +2,7 @@
 
 service_name=$(basename -s .git `git config --get remote.origin.url`)
 latest_tag=$(git describe --tags --abbrev=0)
-echo "prepping $service_name $latest_tag for deploy, good luck :)"
+echo "prepping $service_name $latest_tag for deploy"
 
 publish_release_run_id=$(gh run list --json workflowName,databaseId,headBranch | jq --arg tag "$latest_tag" '.[] | select(.headBranch == $tag).databaseId')
 publish_release_run_status=$(gh run view $publish_release_run_id --json status --jq '.status')
@@ -40,7 +40,8 @@ production_pr_url=$(jq -r '.url' <<< "$production_pr_json")
 slack_message=":pr: $service_name,
 - platform-dev: $pdev_pr_url
 - staging: $staging_pr_url
-- production: $production_pr_url
-"
+- production: $production_pr_url"
 
-printf "$slack_message"
+echo "$slack_message" | pbcopy
+
+echo "$service_name $latest_tag prepped for deploy, good luck :)"
