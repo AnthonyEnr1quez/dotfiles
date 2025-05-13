@@ -81,7 +81,7 @@
               { pkgs, config, inputs, ... }:
                 {
                   nixpkgs.overlays = [
-                    firefox-darwin.overlay
+                    # firefox-darwin.overlay
                     nur.overlays.default
                   ];
                   home-manager.sharedModules = [
