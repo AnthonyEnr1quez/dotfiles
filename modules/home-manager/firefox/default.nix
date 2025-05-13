@@ -71,7 +71,9 @@ in
 
     programs.firefox = {
       enable = true;
-      package = ffPkg;
+      package = ffPkg.overrideAttrs (_: rec {
+        override = _: ffPkg;
+      });
 
       profiles.default = {
         isDefault = true;
