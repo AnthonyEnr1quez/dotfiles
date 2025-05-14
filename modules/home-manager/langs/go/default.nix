@@ -12,10 +12,10 @@
     go = {
       enable = true;
       package = pkgs.go_1_24.overrideAttrs (_: rec {
-        version = "1.24.2";
+        version = "1.24.3";
         src = pkgs.fetchurl {
           url = "https://go.dev/dl/go${version}.src.tar.gz";
-          hash = "sha256-ncd/+twW2DehvzLZnGJMtN8GR87nsRnt2eexvMBfLgA=";
+          hash = "sha256-IpwItgCxRGeYEJ+uH1aSKBAshHPKuoEEtkGMtbwDKHg=";
         };
       });
       goPath = "go";
