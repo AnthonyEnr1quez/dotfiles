@@ -3,7 +3,6 @@
     ./editors
     ./firefox
     ./git
-    ./ide
     ./k9s
     ./langs
     ./ssh
