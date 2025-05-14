@@ -39,19 +39,19 @@ in
 
       extensions =
         (with pkgs.vscode-extensions; [
+          astro-build.astro-vscode
           bbenoist.nix
           golang.go
           mkhl.direnv
-          astro-build.astro-vscode
           ms-kubernetes-tools.vscode-kubernetes-tools
           redhat.vscode-yaml
-          hashicorp.terraform
         ])
         ++ (with (pkgs.forVSCodeVersion cfg.package.version).open-vsx; [
           alphabotsec.vscode-eclipse-keybindings
           itsjonq.owlet
         ])
         ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace; [
+          gamunu.opentofu
           mrmlnc.vscode-json5
         ])
         ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace-release; [
