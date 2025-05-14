@@ -12,7 +12,6 @@
       enable = true;
     };
 
-
     ghostty = {
       enable = true;
     };
@@ -20,16 +19,14 @@
       enable = true;
     };
 
-    programs = {
-      vscode = {
-        package = pkgs.vscodium;
-
-        profiles.default.userSettings."editor.fontFamily" = "Hack Nerd Font Mono";
-      };
-
-      zsh.profileExtra = ''
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-      '';
+    vscode = {
+      enable = true;
+      package = pkgs.vscodium;
     };
+    programs.vscode.profiles.default.userSettings."editor.fontFamily" = "Hack Nerd Font Mono";
+
+    programs.zsh.profileExtra = ''
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    '';
   };
 }

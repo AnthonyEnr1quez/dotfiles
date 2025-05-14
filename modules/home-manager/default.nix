@@ -1,5 +1,6 @@
 { pkgs, ... }: {
   imports = [
+    ./editors
     ./firefox
     ./git
     ./ide

@@ -22,11 +22,11 @@
 
     };
 
-    programs.vscode = {
+    vscode = {
+      enable = true;
       package = pkgs.vscode;
-
-      userSettings."editor.fontFamily" = "Hack";
     };
+    programs.vscode.userSettings."editor.fontFamily" = "Hack";
 
     # wont bind correctly through hm setting
     programs.zsh.initExtra = ''
