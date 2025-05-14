@@ -60,9 +60,14 @@
       inputs.flake-utils.follows = "flake-utils";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-vscode-extensions = {
+      url = "github:nix-community/nix-vscode-extensions";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, flake-utils, home-manager, nur, darwin, firefox-darwin, mac-app-util, catppuccin, nixos-wsl, vscode-server, ... }:
+  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, firefox-darwin, mac-app-util, catppuccin, nixos-wsl, vscode-server, ... }:
     let
       isDarwin = system:
         (builtins.elem system inputs.nixpkgs.lib.platforms.darwin);
@@ -83,6 +88,7 @@
                   nixpkgs.overlays = [
                     firefox-darwin.overlay
                     nur.overlays.default
+                    nix-vscode-extensions.overlays.default
                   ];
                   home-manager.sharedModules = [
                     catppuccin.homeModules.catppuccin
@@ -113,6 +119,14 @@
         , stable ? inputs.stable
         , baseModules ? [
             home-manager.nixosModules.home-manager
+            (
+              { pkgs, config, inputs, ... }:
+                {
+                  nixpkgs.overlays = [
+                    nix-vscode-extensions.overlays.default
+                  ];
+                }
+            )
             ./modules/nixos
             ./hosts/linux
             ./profiles

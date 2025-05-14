@@ -37,37 +37,28 @@ in
           "redhat.telemetry.enabled" = false;
         };
 
-        extensions = with pkgs.vscode-extensions; [
+      extensions =
+        (with pkgs.vscode-extensions; [
           bbenoist.nix
           golang.go
-          github.copilot
-          github.copilot-chat
           mkhl.direnv
           astro-build.astro-vscode
           ms-kubernetes-tools.vscode-kubernetes-tools
           redhat.vscode-yaml
           hashicorp.terraform
-        ] ++ pkgs.vscode-utils.extensionsFromVscodeMarketplace [
-          {
-            name = "vscode-eclipse-keybindings";
-            publisher = "alphabotsec";
-            version = "0.16.1";
-            sha256 = "VK4OS7fvpJsHracfHdC7blvh6qV0IJse4vdRud/yT/o=";
-          }
-          {
-            name = "owlet";
-            publisher = "itsjonq";
-            version = "0.1.22";
-            sha256 = "LUlMX8HAw/34PGQEAwI0y4K0pJ1nilv2oVycC7+zeR4=";
-          }
-          {
-            name = "vscode-json5";
-            publisher = "mrmlnc";
-            version = "1.0.0";
-            sha256 = "XJmlUuKiAWqzvT7tawVY5NHsnUL+hsAjJbrcmxDe8C0=";
-          }
-        ];
-      };
+        ])
+        ++ (with (pkgs.forVSCodeVersion cfg.package.version).open-vsx; [
+          alphabotsec.vscode-eclipse-keybindings
+          itsjonq.owlet
+        ])
+        ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace; [
+          mrmlnc.vscode-json5
+        ])
+        ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace-release; [
+          github.copilot
+          github.copilot-chat
+        ]);
+    };
 
       mutableExtensionsDir = false;
     };

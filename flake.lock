@@ -197,6 +197,29 @@
         "type": "github"
       }
     },
+    "nix-vscode-extensions": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1747188026,
+        "narHash": "sha256-NjiJ2Bce5F7dn+6ZGCenzIjem2+Ei4SDF78x2wHVlOY=",
+        "owner": "nix-community",
+        "repo": "nix-vscode-extensions",
+        "rev": "083675f78e7de80e9fec1f621b8a508e58327131",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nix-vscode-extensions",
+        "type": "github"
+      }
+    },
     "nixos-wsl": {
       "inputs": {
         "flake-compat": "flake-compat_2",
@@ -264,6 +287,7 @@
         "flake-utils": "flake-utils",
         "home-manager": "home-manager",
         "mac-app-util": "mac-app-util",
+        "nix-vscode-extensions": "nix-vscode-extensions",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs",
         "nur": "nur",
