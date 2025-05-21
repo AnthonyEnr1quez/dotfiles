@@ -40,7 +40,7 @@ in
       enable = true;
     };
 
-    initExtra = builtins.readFile ./zshrc_extra;
+    initContent = builtins.readFile ./zshrc_extra;
 
     sessionVariables = {
       ABBR_USER_ABBREVIATIONS_FILE = "${config.home.homeDirectory}/.config/zsh/zsh_abbr";

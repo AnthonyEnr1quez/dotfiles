@@ -45,7 +45,7 @@ in
       };
 
       # custom tab titles
-      zsh.initExtra = ''
+      zsh.initContent = ''
         DISABLE_AUTO_TITLE="true"
         function precmd () {
           echo -ne "\033]0;$(basename $PWD)\007"

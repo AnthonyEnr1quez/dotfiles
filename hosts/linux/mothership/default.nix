@@ -29,7 +29,7 @@
     programs.vscode.userSettings."editor.fontFamily" = "Hack";
 
     # wont bind correctly through hm setting
-    programs.zsh.initExtra = ''
+    programs.zsh.initContent = ''
       bindkey "$terminfo[kcuu1]" history-substring-search-up
       bindkey "$terminfo[kcud1]" history-substring-search-down
     '';
