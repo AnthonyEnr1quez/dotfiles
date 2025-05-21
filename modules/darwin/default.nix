@@ -1,9 +1,11 @@
-{ pkgs, ... }: {
+{ config, pkgs, ... }: {
   imports = [
     ../common.nix
     ./brew.nix
     ./preferences.nix
   ];
+
+  system.primaryUser = "${config.user.name}";
 
   system.stateVersion = 5;
 
