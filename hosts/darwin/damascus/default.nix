@@ -1,6 +1,6 @@
 { config, pkgs, lib, ... }: {
   hm = {
-    firefox-dev = {
+    firefox = {
       bookmarksToolbar = "never";
       extraExtensions = with pkgs.nur.repos.rycee.firefox-addons; [
         facebook-container
@@ -19,7 +19,7 @@
     casks = [
       "balenaetcher"
       "bitwarden"
-      "mullvadvpn"
+      "mullvad-vpn"
       "orbstack"
       "signal"
     ];

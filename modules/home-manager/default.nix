@@ -11,7 +11,7 @@
   ];
 
   home = {
-    stateVersion = "24.11";
+    stateVersion = "25.05";
 
     packages = with pkgs; [
       # ansible
@@ -59,12 +59,8 @@
     fd.enable = true;
 
     # TODO explore more
-    # firefox.enable = true;
-    # go.enable = true;
-
     # gnupg.enable = true;
     # jq.enable = true;
-
     # ## compare
     # htop.enable = true;
     # btm.enable = true;

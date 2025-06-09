@@ -8,7 +8,7 @@
       ../../modules/home-manager/catppuccin
     ];
 
-    firefox-dev = {
+    firefox = {
       enable = true;
     };
 

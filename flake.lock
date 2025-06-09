@@ -55,26 +55,6 @@
         "type": "github"
       }
     },
-    "firefox-darwin": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1749431425,
-        "narHash": "sha256-1IBzlwZOinFrL3DRN2iZI0FFMhnCjnHWaVG4BihGWBw=",
-        "owner": "bandithedoge",
-        "repo": "nixpkgs-firefox-darwin",
-        "rev": "e1848d22451c748fdd10ffc539a4896e224136c4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "bandithedoge",
-        "repo": "nixpkgs-firefox-darwin",
-        "type": "github"
-      }
-    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -184,15 +164,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1742156590,
-        "narHash": "sha256-aTM/2CrNN5utdVEQGsOA+kl4UozgH7VPLBQL5OXtBrg=",
+        "lastModified": 1744050665,
+        "narHash": "sha256-6BF4KdSi1umFQqO8DXiE0/IPS0tcmj2tUadTolGIHfo=",
         "owner": "hraban",
         "repo": "mac-app-util",
-        "rev": "341ede93f290df7957047682482c298e47291b4d",
+        "rev": "6cee19d4fad9044a53bd78390bd6b51e0c98c74a",
         "type": "github"
       },
       "original": {
         "owner": "hraban",
+        "ref": "link-contents",
         "repo": "mac-app-util",
         "type": "github"
       }
@@ -283,7 +264,6 @@
       "inputs": {
         "catppuccin": "catppuccin",
         "darwin": "darwin",
-        "firefox-darwin": "firefox-darwin",
         "flake-utils": "flake-utils",
         "home-manager": "home-manager",
         "mac-app-util": "mac-app-util",
@@ -298,16 +278,16 @@
     },
     "stable": {
       "locked": {
-        "lastModified": 1749173751,
-        "narHash": "sha256-ENY3y3v6S9ZmLDDLI3LUT8MXmfXg/fSt2eA4GCnMVCE=",
+        "lastModified": 1749237914,
+        "narHash": "sha256-N5waoqWt8aMr/MykZjSErOokYH6rOsMMXu3UOVH5kiw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ed29f002b6d6e5e7e32590deb065c34a31dc3e91",
+        "rev": "70c74b02eac46f4e4aa071e45a6189ce0f6d9265",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-24.11",
+        "ref": "nixos-25.05",
         "repo": "nixpkgs",
         "type": "github"
       }
