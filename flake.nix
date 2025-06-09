@@ -28,7 +28,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     mac-app-util = {
-      url = "github:hraban/mac-app-util";
+      url = "github:hraban/mac-app-util/link-contents";
       inputs.flake-utils.follows = "flake-utils";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.systems.follows = "systems";
