@@ -27,10 +27,6 @@
       url = "github:lnl7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    firefox-darwin = {
-      url = "github:bandithedoge/nixpkgs-firefox-darwin";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     mac-app-util = {
       url = "github:hraban/mac-app-util";
       inputs.flake-utils.follows = "flake-utils";
@@ -67,7 +63,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, firefox-darwin, mac-app-util, catppuccin, nixos-wsl, vscode-server, ... }:
+  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, mac-app-util, catppuccin, nixos-wsl, vscode-server, ... }:
     let
       isDarwin = system:
         (builtins.elem system inputs.nixpkgs.lib.platforms.darwin);
@@ -86,7 +82,6 @@
               { pkgs, config, inputs, ... }:
                 {
                   nixpkgs.overlays = [
-                    firefox-darwin.overlay
                     nur.overlays.default
                     nix-vscode-extensions.overlays.default
                   ];

@@ -1,6 +1,6 @@
 { config, pkgs, lib, ... }: {
   hm = {
-    firefox-dev = {
+    firefox = {
       enable = lib.mkForce false;
     };
 
@@ -31,7 +31,7 @@
       # "keepingyouawake"
       "linearmouse"
       # "macfuse"
-      "mullvadvpn"
+      "mullvad-vpn"
       # "obsidian"
       # "raycast"
       # "sensiblesidebuttons"
