@@ -55,25 +55,25 @@ in
     # https://support.mozilla.org/en-US/kb/understanding-depth-profile-installation#w_new-behaviour
     # https://github.com/nix-community/home-manager/issues/3323
     # https://github.com/nix-community/home-manager/issues/5717
-    home.file = {
-      "${firefoxDir}/profiles.ini".text = ''
-        [Install${installDirHash}]
-        Default=Profiles/default
-        Locked=1
-      '';
+    # home.file = {
+    #   "${firefoxDir}/profiles.ini".text = ''
+    #     [Install${installDirHash}]
+    #     Default=Profiles/default
+    #     Locked=1
+    #   '';
 
-      "${firefoxDir}/installs.ini".text = ''
-        [${installDirHash}]
-        Default=Profiles/default
-        Locked=1
-      '';
-    };
+    #   "${firefoxDir}/installs.ini".text = ''
+    #     [${installDirHash}]
+    #     Default=Profiles/default
+    #     Locked=1
+    #   '';
+    # };
 
     programs.firefox = {
       enable = true;
-      package = ffPkg.overrideAttrs (_: rec {
-        override = _: ffPkg;
-      });
+      # package = ffPkg.overrideAttrs (_: rec {
+      #   override = _: ffPkg;
+      # });
 
       profiles.default = {
         isDefault = true;
