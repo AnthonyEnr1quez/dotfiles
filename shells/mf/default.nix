@@ -14,12 +14,12 @@ let
   };
 
   librdkafka = pkgs.rdkafka.overrideAttrs (_: rec {
-    version = "unstable-2025-05-29";
+    version = "unstable-2025-07-03";
     src = pkgs.fetchFromGitHub {
       owner = "confluentinc";
       repo = "librdkafka";
-      rev = "3f52de491f8aae1d71a9a0b3f1c07bfd6df4aec3"; # tags/v*
-      sha256 = "0gbsv5qfbyik7rym39y4lkn3r5wljgnhgsxn6ya9gnzyqx5avya7";
+      rev = "c56a3e68483ae33622901988ab9c4085f0785c3c"; # tags/v*
+      sha256 = "0yanw8lg86vsp7g41bsafkxb08a5zmg0m1dyq1838yc5w11l5ffz";
     };
   });
 
