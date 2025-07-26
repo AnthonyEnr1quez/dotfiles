@@ -9,8 +9,8 @@ let
     rev = "eaddc9b4dd42e79a47e2536df388f795697046c9"; # master
     sha256 = "14zv72vvnawxx4q6w10yz9hal6mqr0pmhy6bpdrhs5ckhxd62j78";
   };
-  
-    cfg = config.${name};
+
+  cfg = config.${name};
 
   inherit (lib) mkIf mkEnableOption mkOption types;
 in
