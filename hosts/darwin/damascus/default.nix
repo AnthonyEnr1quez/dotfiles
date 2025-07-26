@@ -15,6 +15,16 @@
     ];
   };
 
+  users.users.jen.home = "/Users/jen";
+  home-manager.users.jen = {
+    home.stateVersion = "25.05";
+
+    programs.firefox = {
+      enable = true;
+      profiles.jj.isDefault = true;
+    };
+  };
+
   homebrew = {
     casks = [
       "balenaetcher"
