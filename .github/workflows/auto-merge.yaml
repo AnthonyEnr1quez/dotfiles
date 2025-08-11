@@ -1,0 +1,22 @@
+name: Auto Merge
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  auto-merge:
+    if: ${{ github.head_ref == 'chore/update-nix-fetch-git' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        id: generate-token
+        with:
+          app-id: ${{ secrets.CPR_APP_ID }}
+          private-key: ${{ secrets.CPR_APP_PRIVATE_KEY }}
+
+      - name: Enable Pull Request Automerge
+        run: gh pr merge --merge --auto
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
