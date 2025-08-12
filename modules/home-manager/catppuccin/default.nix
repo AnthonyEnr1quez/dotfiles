@@ -6,5 +6,6 @@
     fzf.enable = true;
     # k9s.enable = true; # TODO
     kitty.enable = true;
+    zsh-syntax-highlighting.enable = true;
   };
 }

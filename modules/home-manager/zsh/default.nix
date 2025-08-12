@@ -59,12 +59,19 @@ in
       "......" = "../../../../..";
     };
 
+    syntaxHighlighting = {
+      enable = true;
+      highlighters = [ "main" "brackets" "pattern" "line" "cursor" "root" ];
+    };
+
     plugins = [
-      {
-        name = "fast-syntax-highlighting";
-        file = "fast-syntax-highlighting.plugin.zsh";
-        src = "${pkgs.zsh-fast-syntax-highlighting}/share/zsh/site-functions";
-      }
+      # this is slow af now for make and unusable :(
+      # https://github.com/zdharma-continuum/fast-syntax-highlighting/pull/82
+      # {
+      #   name = "fast-syntax-highlighting";
+      #   file = "fast-syntax-highlighting.plugin.zsh";
+      #   src = "${pkgs.zsh-fast-syntax-highlighting}/share/zsh/site-functions";
+      # }
       {
         name = "zsh-abbr";
         src = pkgs.fetchFromGitHub {
