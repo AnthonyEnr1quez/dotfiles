@@ -16,9 +16,10 @@ in
     programs = {
       ghostty = {
         enable = true;
-        package = pkgs.nur.repos.gigamonster256.ghostty-darwin;
+        # package = pkgs.nur.repos.gigamonster256.ghostty-darwin;
+        package = null; # using brew for now
         enableZshIntegration = true;
-        installBatSyntax = true;
+        # installBatSyntax = true;
 
         settings = {
           auto-update = "off";
