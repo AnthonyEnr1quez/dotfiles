@@ -5,9 +5,9 @@
     ./git
     ./k9s
     ./langs
+    ./shells
     ./ssh
     ./terms
-    ./zsh
   ];
 
   home = {
