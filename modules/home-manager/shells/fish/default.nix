@@ -62,7 +62,7 @@
             owner = "mattgreen";
             repo = "lucid.fish";
             rev = "b6aca138ce47289f2083bcb63c062d47dcaf4368"; # master
-            sha256 = "sha256-6HepVxMm9LdJoifczvQS98kAc1+RTKJh+OHRf28nhZM=";
+            sha256 = "14w54xppzlg1z1hs4k4ibxrh1jgp2bscxp17l94vgx162dbsjxz8";
           };
         }
         # {
