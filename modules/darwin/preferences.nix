@@ -16,6 +16,7 @@
       autohide = true;
       autohide-delay = 0.0;
       autohide-time-modifier = 1.0;
+      mru-spaces = false; # dont rearrage spaces based on most recent use
     };
 
     finder = {
