@@ -5,10 +5,14 @@
         gh
         wget
         opentofu
+        spacectl
         blackbox
         jetbrains.goland
         jq
         gotools
+
+        claude-code
+        gemini-cli
 
         (google-cloud-sdk.withExtraComponents
           (with google-cloud-sdk.components; [
