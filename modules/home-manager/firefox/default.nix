@@ -55,6 +55,11 @@ in
           "app.update.staging.enabled" = false;
           "app.update.suppressPrompts" = true;
 
+          # ai tings
+          "browser.ml.chat.enabled" = false;
+          "browser.ml.enable" = false;
+          "browser.ml.linkPreview.enabled" = false;
+
           # always show bookmarks
           "browser.toolbars.bookmarks.showInPrivateBrowsing" = true;
           "browser.toolbars.bookmarks.visibility" = cfg.bookmarksToolbar;
