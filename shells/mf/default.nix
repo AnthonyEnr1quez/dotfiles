@@ -23,6 +23,8 @@ let
     };
   });
 
+  apple-sdk = pkgs.apple-sdk_15;
+
   # Function to create a basic shell script package
   # https://www.ertt.ca/nix/shell-scripts/#org6f67de6
   # https://github.com/ponkila/HomestakerOS/blob/56523feb33a4e797a1a12e9e11321b6d4b6ce635/flake.nix#L39
@@ -81,7 +83,7 @@ let
   scripts = with builtins; (map (key: getAttr key scriptDefs) (attrNames scriptDefs));
 
 in
-pkgs.mkShell {
+pkgs.mkShell ({
   packages = with pkgs; [
     librdkafka
     pkg-config
@@ -98,7 +100,20 @@ pkgs.mkShell {
     bumper
   ] ++ scripts;
 
-  # env vars
-  BUMPER_PD_PATH = "/Users/anthony.enriquez/Projects/moov/mf/platform-dev";
-  BUMPER_INFRA_PATH = "/Users/anthony.enriquez/Projects/moov/mf/infra";
-}
+  env = {
+    BUMPER_PD_PATH = "/Users/anthony.enriquez/Projects/moov/mf/platform-dev";
+    BUMPER_INFRA_PATH = "/Users/anthony.enriquez/Projects/moov/mf/infra";
+  };
+} // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+  buildInputs = [
+    apple-sdk
+  ];
+
+  # fix ld linked errors
+  # https://stackoverflow.com/questions/71112682/ld-warning-dylib-was-built-for-newer-macos-version-11-3-than-being-linked-1
+  # ld: warning: object file (.../go/pkg/mod/github.com/confluentinc/confluent-kafka-go/v2@v2.2.0/kafka/librdkafka_vendor/librdkafka_darwin_arm64.a(libcommon-lib-der_ec_key.o))
+  # was built for newer macOS version (12.0) than being linked (11.0)
+  shellHook = ''
+    export MACOSX_DEPLOYMENT_TARGET=${apple-sdk.version}
+  '';
+})
