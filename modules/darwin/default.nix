@@ -15,6 +15,8 @@
   # nix.configureBuildUsers = true;
   ids.gids.nixbld = 30000;
 
+  user.uid = 501;
+
   nix.settings = {
     trusted-substituters = [
       "https://cache.nixos.org"

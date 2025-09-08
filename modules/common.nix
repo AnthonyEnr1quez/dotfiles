@@ -1,10 +1,13 @@
 { self, inputs, config, lib, pkgs, ... }: {
   imports = [ ./primary.nix ];
 
-  programs.zsh = {
-    enable = true;
-    enableCompletion = true;
-    enableBashCompletion = true;
+  programs = {
+    fish.enable = true;
+    zsh = {
+      enable = true;
+      enableCompletion = true;
+      enableBashCompletion = true;
+    };
   };
 
   nixpkgs.config.allowUnfree = true;
@@ -13,8 +16,11 @@
     home = "${
         if pkgs.stdenvNoCC.isDarwin then "/Users" else "/home"
       }/${config.user.name}";
-    shell = pkgs.zsh;
+    shell = pkgs.fish;
   };
+  users.knownUsers = [
+    "${config.user.name}"
+  ];
 
   # bootstrap home manager using system config
   hm = import ./home-manager;
@@ -30,7 +36,7 @@
   # environment setup
   environment = {
     # list of acceptable shells in /etc/shells
-    shells = with pkgs; [ bash zsh ];
+    shells = with pkgs; [ bash fish zsh ];
   };
 
   nix.extraOptions = ''

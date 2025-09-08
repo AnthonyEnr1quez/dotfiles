@@ -18,6 +18,7 @@ in
         enable = true;
         # package = pkgs.nur.repos.gigamonster256.ghostty-darwin;
         package = null; # using brew for now
+        enableFishIntegration = true;
         enableZshIntegration = true;
         # installBatSyntax = true;
 

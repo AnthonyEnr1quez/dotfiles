@@ -1,12 +1,15 @@
 { pkgs, lib, ... }: {
-
-  home.sessionPath = [
-    "$GOPATH/bin"
-  ];
-
-  home.packages = with pkgs; [
-    gotestsum
-  ];
+  home = {
+    packages = with pkgs; [
+      gotestsum
+    ];
+    sessionPath = [
+      "$GOPATH/bin"
+    ];
+    sessionVariables = {
+      GOTOOLCHAIN = "local";
+    };
+  };
 
   programs = {
     go = {
@@ -19,10 +22,6 @@
         };
       });
       goPath = "go";
-    };
-
-    zsh.sessionVariables = {
-      GOTOOLCHAIN = "local";
     };
   };
 }
