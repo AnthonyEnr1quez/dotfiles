@@ -24,7 +24,11 @@
       package = pkgs.vscodium;
     };
     programs.vscode.profiles.default.userSettings."editor.fontFamily" = "Hack Nerd Font Mono";
+    zed = {
+      enable = true;
+    };
 
+    # todo same for fish?
     programs.zsh.profileExtra = ''
       eval "$(/opt/homebrew/bin/brew shellenv)"
     '';
