@@ -16,6 +16,19 @@
         echo -n "}"
         set_color normal
       '';
+
+      fish_title = ''
+        if test "$PWD" = "$HOME"
+          set bpwd '~'
+        else
+          set bpwd (basename $PWD)
+        end
+        if set -q argv[1]
+          echo $bpwd: $argv
+        else
+          echo $bpwd
+        end
+      '';
     };
 
     shellAliases = {
