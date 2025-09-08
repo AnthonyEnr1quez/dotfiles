@@ -1,4 +1,8 @@
-{ config, pkgs, lib, ... }: {
+{ config, pkgs, lib, ... }:
+let
+  mfPath = "${config.user.home}/Projects/moov/mf";
+in
+{
   hm = {
     home = {
       packages = with pkgs; [
@@ -33,9 +37,13 @@
 
     programs = {
       zsh = {
-        cdpath = [
-          "${config.user.home}/Projects/moov/mf"
-        ];
+        cdpath = [ mfPath ];
+      };
+
+      fish = {
+        interactiveShellInit = ''
+          set -gx CDPATH $CDPATH . ~ ${mfPath}
+        '';
       };
 
       go.goPrivate = [ "github.com/moov-io/*" "github.com/moovfinancial/*" ];
