@@ -16,6 +16,9 @@
   ids.gids.nixbld = 30000;
 
   user.uid = 501;
+  users.knownUsers = [
+    "${config.user.name}"
+  ];
 
   nix.settings = {
     trusted-substituters = [

@@ -18,9 +18,6 @@
       }/${config.user.name}";
     shell = pkgs.fish;
   };
-  users.knownUsers = [
-    "${config.user.name}"
-  ];
 
   # bootstrap home manager using system config
   hm = import ./home-manager;
