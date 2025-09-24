@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }: {
+{ config, pkgs, lib, ... }: {
   home = {
     packages = with pkgs; [
       gotestsum
@@ -21,7 +21,7 @@
           hash = "sha256-S9AekSlyB7+kUOpA1NWpOxtTGl5DhHOyoG4Y4HciciU=";
         };
       });
-      goPath = "go";
+      env.GOPATH = "${config.home.homeDirectory}/go";
     };
   };
 }

@@ -46,7 +46,7 @@ in
         '';
       };
 
-      go.goPrivate = [ "github.com/moov-io/*" "github.com/moovfinancial/*" ];
+      go.env.GOPRIVATE = [ "github.com/moov-io/*" "github.com/moovfinancial/*" ];
     };
   };
 
