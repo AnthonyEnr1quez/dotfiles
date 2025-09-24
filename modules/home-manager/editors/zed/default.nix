@@ -15,6 +15,30 @@ in
   config = mkIf cfg.enable {
     programs.zed-editor = {
       enable = true;
+
+      extensions = [
+        "docker-compose"
+        "dockerfile"
+        "git-firefly"
+        "csv"
+        "log"
+        "make"
+        "nix"
+        "sql"
+        "terraform"
+      ];
+
+      userSettings = {
+        auto_update = false;
+        autosave = {
+          after_delay = {
+            milliseconds = 1000;
+          };
+        };
+        telemetry = {
+          metrics = false;
+        };
+      };
     };
   };
 }
