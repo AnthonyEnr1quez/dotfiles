@@ -49,9 +49,9 @@ in
           ++ (with (pkgs.forVSCodeVersion cfg.package.version).open-vsx; [
             alphabotsec.vscode-eclipse-keybindings
             itsjonq.owlet
+            opentofu.vscode-opentofu
           ])
           ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace; [
-            gamunu.opentofu
             mrmlnc.vscode-json5
           ])
           ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace-release; [
