@@ -3,8 +3,8 @@ let
   ohmyzsh = pkgs.fetchFromGitHub {
     owner = "ohmyzsh";
     repo = "ohmyzsh";
-    rev = "d1c04d8a33f9127d03b69617c5367db5ceebc8a7"; # master
-    sha256 = "176w6712lw43svb0r00wfx33ncc6n8mhgk6sxsqb5yv5j98zpprn";
+    rev = "969cd28e0d5724019061f10454c02d3ec2a71fd4"; # master
+    sha256 = "0zgipqbbv7svcvhmcjxjc8pwna9q0cyhlg7j7kc9h2vs92dhyw9l";
     # todo, cant auto update with sparse checkout?
     # use pkg???
     # sparseCheckout = [
