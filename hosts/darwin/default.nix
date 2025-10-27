@@ -28,6 +28,10 @@
       enable = true;
     };
 
+    home.packages = with pkgs; [
+      stats
+    ];
+
     # todo same for fish?
     programs.zsh.profileExtra = ''
       eval "$(/opt/homebrew/bin/brew shellenv)"
