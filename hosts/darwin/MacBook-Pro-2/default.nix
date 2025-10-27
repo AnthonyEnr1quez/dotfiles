@@ -52,6 +52,7 @@ in
 
   homebrew = {
     casks = [
+      "beekeeper-studio"
       "docker-desktop"
       "google-drive"
       "linear-linear"
