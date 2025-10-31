@@ -24,7 +24,7 @@ let
         rev = "af0a619d0b5469851993dee22446383fe4c8d5c2";
         sha256 = "sha256-4JSnUQ0uQN9Y4x4ZOS2JU2ewVbDZvFDQXdpFl8Sr6fM=";
       });
-    vendorHash = "sha256-LoUg18U5wuQuLnlPAq/r4YG4T2bRqJZD/tmKU0QLevI=";
+    vendorHash = "sha256-z/ugDBTKRL7ixkU1d18vtsi6AcNiquDgy2fb/tLQuA0=";
   };
 
   oq = pkgs.buildGoModule rec {
