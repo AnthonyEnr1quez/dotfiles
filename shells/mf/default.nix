@@ -21,7 +21,7 @@ let
       (pkgs.fetchFromGitHub {
         owner = "timtatt";
         repo = "sift";
-        rev = "af0a619d0b5469851993dee22446383fe4c8d5c2"; # tags/v*
+        rev = "af0a619d0b5469851993dee22446383fe4c8d5c2";
         sha256 = "sha256-4JSnUQ0uQN9Y4x4ZOS2JU2ewVbDZvFDQXdpFl8Sr6fM=";
       });
     vendorHash = "sha256-LoUg18U5wuQuLnlPAq/r4YG4T2bRqJZD/tmKU0QLevI=";
@@ -33,7 +33,7 @@ let
     src = pkgs.fetchFromGitHub {
       owner = "plutov";
       repo = "oq";
-      rev = "c3bbc75c79554f4dab1bf2f46480f570468d953e"; # tags/v*
+      rev = "c3bbc75c79554f4dab1bf2f46480f570468d953e";
       sha256 = "sha256-DVQyiwlUAwdWBBq3Zoto0Mi/vWhC+lMt8KeFBFSVsF8=";
     };
     vendorHash = "sha256-843hhDJXLkqbfuB4CdFl5suLqgsGIAWlk7st46cJp3c=";
