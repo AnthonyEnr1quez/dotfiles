@@ -1,6 +1,7 @@
 { config, pkgs, lib, ... }: {
   home = {
     packages = with pkgs; [
+      gotest
       gotestsum
     ];
     sessionPath = [
