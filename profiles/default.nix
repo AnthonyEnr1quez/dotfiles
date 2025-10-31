@@ -4,8 +4,12 @@
   hm = {
     programs = {
       git = {
-        userEmail = "32233059+AnthonyEnr1quez@users.noreply.github.com";
-        userName = "AnthonyEnr1quez";
+        settings = {
+          user = {
+            email = "32233059+AnthonyEnr1quez@users.noreply.github.com";
+            name = "AnthonyEnr1quez";
+          };
+        };
       };
     };
 
