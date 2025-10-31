@@ -1,5 +1,6 @@
 { pkgs, ... }: {
   imports = [
+    ./ai
     ./editors
     ./firefox
     ./git

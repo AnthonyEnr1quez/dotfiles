@@ -35,6 +35,10 @@ in
       };
     };
 
+    opencode = {
+      enable = true;
+    };
+
     programs = {
       zsh = {
         cdpath = [ mfPath ];
