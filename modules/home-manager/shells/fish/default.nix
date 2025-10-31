@@ -35,16 +35,29 @@
       # https://github.com/ibraheemdev/modern-unix
       cat = "bat";
       ls = "eza -1"; #todo can delete??
-
-      "..." = "../..";
-      "...." = "../../..";
-      "....." = "../../../..";
-      "......" = "../../../../..";
     };
 
     shellInit = ''
       set -g fish_greeting # remove hello fish text
       set -g lucid_dirty_indicator "✗"
+    '';
+
+    interactiveShellInit = ''
+      # expand ... as ../..
+      function expand-dot-to-parent-directory-path -d 'expand ... to ../.. etc'
+          # get commandline up to cursor
+          set -l cmd (commandline --cut-at-cursor)
+
+          # match last line
+          switch $cmd[-1]
+              case '*..'
+                  commandline --insert '/..'
+              case '*'
+                  commandline --insert '.'
+          end
+      end
+
+      bind . 'expand-dot-to-parent-directory-path'
     '';
 
     plugins =
