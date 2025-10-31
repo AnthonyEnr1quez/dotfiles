@@ -15,26 +15,26 @@ let
 
   sift = pkgs.buildGoModule rec {
     pname = "sift";
-    version = "unstable-2025-10-24";
+    version = "0.12.0";
     src = builtins.filterSource
       (path: type: (baseNameOf path) != "samples")
       (pkgs.fetchFromGitHub {
         owner = "timtatt";
         repo = "sift";
         rev = "af0a619d0b5469851993dee22446383fe4c8d5c2"; # tags/v*
-        sha256 = "1wz9mg29fifsbp851g6rn1av0rski4nkj68ywdcdyh1f1m8sg570";
+        sha256 = "sha256-4JSnUQ0uQN9Y4x4ZOS2JU2ewVbDZvFDQXdpFl8Sr6fM=";
       });
     vendorHash = "sha256-LoUg18U5wuQuLnlPAq/r4YG4T2bRqJZD/tmKU0QLevI=";
   };
 
   oq = pkgs.buildGoModule rec {
     pname = "oq";
-    version = "unstable-2025-10-04";
+    version = "0.0.20";
     src = pkgs.fetchFromGitHub {
       owner = "plutov";
       repo = "oq";
       rev = "c3bbc75c79554f4dab1bf2f46480f570468d953e"; # tags/v*
-      sha256 = "0pxhjma091d7y0nm7yj2d2yvzj6hd25nddqs0ib0f0sl165k4m0d";
+      sha256 = "sha256-DVQyiwlUAwdWBBq3Zoto0Mi/vWhC+lMt8KeFBFSVsF8=";
     };
     vendorHash = "sha256-843hhDJXLkqbfuB4CdFl5suLqgsGIAWlk7st46cJp3c=";
   };
