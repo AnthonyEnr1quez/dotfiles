@@ -39,16 +39,6 @@ let
     vendorHash = "sha256-843hhDJXLkqbfuB4CdFl5suLqgsGIAWlk7st46cJp3c=";
   };
 
-  librdkafka = pkgs.rdkafka.overrideAttrs (_: rec {
-    version = "unstable-2025-10-20";
-    src = pkgs.fetchFromGitHub {
-      owner = "confluentinc";
-      repo = "librdkafka";
-      rev = "570c785e9e35812db8f50254bd2f7e0cf47def39"; # tags/v*
-      sha256 = "0hs0sj5jl95hpwqffx9m87fkdl93ghm23xd2ri1x0qjq41030nhi";
-    };
-  });
-
   apple-sdk = pkgs.apple-sdk_15;
 
   # Function to create a basic shell script package
@@ -111,21 +101,11 @@ let
 in
 pkgs.mkShell ({
   packages = with pkgs; [
-    librdkafka
     pkg-config
-    libxml2
-    libxml2.dev
-    libxslt # TODO unneeded?
-
-    openssl
-    openssl.dev
-
-    cyrus_sasl
-    zstd
+    libxml2_13
 
     sift
     oq
-
     bumper
   ] ++ scripts;
 
