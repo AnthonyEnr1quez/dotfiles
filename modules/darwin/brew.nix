@@ -14,7 +14,6 @@
 
     casks = [
       "alt-tab"
-      "ghostty"
       "logi-options+"
       "postman"
     ];

@@ -16,8 +16,7 @@ in
     programs = {
       ghostty = {
         enable = true;
-        # package = pkgs.nur.repos.gigamonster256.ghostty-darwin;
-        package = null; # using brew for now
+        package = lib.mkIf pkgs.stdenvNoCC.hostPlatform.isDarwin pkgs.ghostty-bin;
         enableFishIntegration = true;
         enableZshIntegration = true;
         # installBatSyntax = true;
@@ -33,7 +32,7 @@ in
           quit-after-last-window-closed = true;
           scrollback-limit = 100000000;
 
-          theme = "catppuccin-mocha";
+          theme = "Catppuccin Mocha";
 
           # custom tab titles
           shell-integration-features = "no-title";
