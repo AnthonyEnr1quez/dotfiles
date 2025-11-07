@@ -27,12 +27,6 @@
       url = "github:lnl7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    mac-app-util = {
-      url = "github:hraban/mac-app-util/link-contents";
-      inputs.flake-utils.follows = "flake-utils";
-      # inputs.nixpkgs.follows = "nixpkgs";
-      inputs.systems.follows = "systems";
-    };
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -62,7 +56,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, mac-app-util, catppuccin, nixos-wsl, vscode-server, ... }:
+  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, nixos-wsl, vscode-server, ... }:
     let
       isDarwin = system:
         (builtins.elem system inputs.nixpkgs.lib.platforms.darwin);
@@ -75,7 +69,6 @@
         , nixpkgs ? inputs.nixpkgs
         , stable ? inputs.stable # # TODO is this needed with no overlays?
         , baseModules ? [
-            mac-app-util.darwinModules.default
             home-manager.darwinModules.home-manager
             (
               { pkgs, config, inputs, ... }:
@@ -86,7 +79,6 @@
                   ];
                   home-manager.sharedModules = [
                     catppuccin.homeModules.catppuccin
-                    mac-app-util.homeManagerModules.default
                     nur.modules.homeManager.default
                   ];
                 }

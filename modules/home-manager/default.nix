@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, lib, ... }: {
   imports = [
     ./ai
     ./editors
@@ -66,5 +66,10 @@
     # ## compare
     # htop.enable = true;
     # btm.enable = true;
+  };
+
+  targets.darwin = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+    copyApps.enable = true;
+    linkApps.enable = false;
   };
 }
