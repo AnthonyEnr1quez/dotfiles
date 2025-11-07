@@ -113,7 +113,7 @@ pkgs.mkShell ({
     BUMPER_PD_PATH = "/Users/anthony.enriquez/Projects/moov/mf/platform-dev";
     BUMPER_INFRA_PATH = "/Users/anthony.enriquez/Projects/moov/mf/infra";
   };
-} // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+} // pkgs.lib.optionalAttrs pkgs.stdenvNoCC.hostPlatform.isDarwin {
   buildInputs = [
     apple-sdk
   ];

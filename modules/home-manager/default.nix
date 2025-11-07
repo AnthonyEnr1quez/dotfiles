@@ -68,7 +68,7 @@
     # btm.enable = true;
   };
 
-  targets.darwin = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+  targets.darwin = lib.mkIf pkgs.stdenvNoCC.hostPlatform.isDarwin {
     copyApps.enable = true;
     linkApps.enable = false;
   };

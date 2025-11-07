@@ -58,9 +58,6 @@
 
   outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, nixos-wsl, vscode-server, ... }:
     let
-      isDarwin = system:
-        (builtins.elem system inputs.nixpkgs.lib.platforms.darwin);
-
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig =

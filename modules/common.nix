@@ -14,7 +14,7 @@
 
   user = {
     home = "${
-        if pkgs.stdenvNoCC.isDarwin then "/Users" else "/home"
+        if pkgs.stdenvNoCC.hostPlatform.isDarwin then "/Users" else "/home"
       }/${config.user.name}";
     shell = pkgs.fish;
   };
