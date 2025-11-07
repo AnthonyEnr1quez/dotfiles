@@ -32,7 +32,7 @@ jobs:
 
   intel-macos:
     # runs-on: macos-12 # drachenflieger is on this version but runner deprecated
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
