@@ -56,7 +56,7 @@ in
           ])
           ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace-release; [
             # github.copilot
-            github.copilot-chat
+            # github.copilot-chat
           ]);
       };
 
