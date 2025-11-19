@@ -28,7 +28,7 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - uses: workflow/nix-shell-action@608eb20401e12c82b204e8e2c6a8b0eebfb5407c # v3
+      - uses: workflow/nix-shell-action@5fdff26c1325df635247f72cba79ffc370303fdb # v3.4.0
         with:
           packages: fd,update-nix-fetchgit
           script: |
