@@ -89,8 +89,7 @@ in
         };
 
         userChrome = ''
-          @import "${firefox-csshacks}/chrome/hide_tabs_toolbar_osx.css";
-          @import "${firefox-csshacks}/window_control_placeholder_support.css;
+          @import "${firefox-csshacks}/chrome/hide_tabs_toolbar_v2.css";
         '';
       };
     };
