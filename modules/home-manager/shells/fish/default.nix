@@ -40,6 +40,9 @@
     shellInit = ''
       set -g fish_greeting # remove hello fish text
       set -g lucid_dirty_indicator "✗"
+      # Fix lucid.fish color variables - use just the color, not the theme flag
+      set -g lucid_prompt_symbol_color $fish_color_normal[1]
+      set -g lucid_prompt_symbol_error_color $fish_color_error[1]
     '';
 
     interactiveShellInit = ''
