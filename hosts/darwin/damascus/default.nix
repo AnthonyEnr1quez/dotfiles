@@ -17,7 +17,7 @@
 
   users.users.jen.home = "/Users/jen";
   home-manager.users.jen = {
-    home.stateVersion = "25.05";
+    home.stateVersion = "25.11";
 
     programs.firefox = {
       enable = true;
