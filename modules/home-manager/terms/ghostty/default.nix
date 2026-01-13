@@ -32,7 +32,7 @@ in
           quit-after-last-window-closed = true;
           scrollback-limit = 100000000;
 
-          theme = "Catppuccin Mocha";
+          # theme = "Catppuccin Mocha";
 
           # custom tab titles
           shell-integration-features = "no-title";
