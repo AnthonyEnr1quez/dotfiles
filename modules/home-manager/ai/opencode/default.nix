@@ -12,7 +12,8 @@ in
     enable = mkEnableOption name;
   };
 
-  config = mkIf cfg.enable {
+  # models-dev marked as bad platform on intel darwin
+  config = mkIf (cfg.enable && !(pkgs.stdenvNoCC.hostPlatform.isDarwin && pkgs.stdenvNoCC.hostPlatform.isx86_64)) {
     programs = {
       opencode = {
         enable = true;
