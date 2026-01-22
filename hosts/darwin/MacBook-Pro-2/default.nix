@@ -10,7 +10,6 @@ in
         wget
         opentofu
         spacectl
-        blackbox
         jetbrains.goland
         jq
         gotools
