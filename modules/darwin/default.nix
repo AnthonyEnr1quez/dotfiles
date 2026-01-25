@@ -22,7 +22,7 @@
 
   # NOTE: Keep these in sync with flake.nix nixConfig
   nix.settings = {
-    trusted-substituters = [
+    substituters = [
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
       "https://anthonyenr1quez.cachix.org"
