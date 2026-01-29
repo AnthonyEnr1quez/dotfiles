@@ -32,7 +32,7 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - run: nix build --accept-flake-config .#darwinConfigurations.drachenflieger.config.system.build.toplevel
+      - run: nix build --accept-flake-config .#darwinConfigurations.drachenflieger.config.system.build.toplevel --verbose --print-build-logs
 
   arm-macos:
     runs-on: macos-26
