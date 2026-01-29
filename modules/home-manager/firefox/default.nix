@@ -33,6 +33,7 @@ in
   config = mkIf cfg.enable {
     programs.firefox = {
       enable = true;
+      package = pkgs.firefox-bin;
 
       profiles.default = {
         isDefault = true;
