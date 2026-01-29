@@ -85,6 +85,10 @@ in
           "signon.rememberSignons" = false;
           "signon.autofillForms" = false;
 
+          # session restore
+          "browser.sessionstore.resume_from_crash" = true;
+          "browser.startup.page" = 3; # 3 = restore previous session
+
           # enabled userchrome
           "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
         };
