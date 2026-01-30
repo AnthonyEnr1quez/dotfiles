@@ -33,6 +33,7 @@ in
   config = mkIf cfg.enable {
     programs.firefox = {
       enable = true;
+      package = pkgs.firefox-bin;
 
       profiles.default = {
         isDefault = true;
@@ -83,6 +84,10 @@ in
           # disable password manager
           "signon.rememberSignons" = false;
           "signon.autofillForms" = false;
+
+          # session restore
+          "browser.sessionstore.resume_from_crash" = true;
+          "browser.startup.page" = 3; # 3 = restore previous session
 
           # enabled userchrome
           "toolkit.legacyUserProfileCustomizations.stylesheets" = true;

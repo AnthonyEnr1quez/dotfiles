@@ -21,6 +21,7 @@
 
     programs.firefox = {
       enable = true;
+      package = pkgs.firefox-bin;
       profiles.jj.isDefault = true;
     };
   };

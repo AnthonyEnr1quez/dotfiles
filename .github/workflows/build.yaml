@@ -1,14 +1,22 @@
 name: Build
 
 on:
-  workflow_dispatch:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: Enable verbose logging for Nix builds
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   linux:
     runs-on: ubuntu-latest
+    env:
+      VERBOSE_FLAGS: ${{ inputs.verbose == true && '--verbose --print-build-logs' || '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -18,11 +26,13 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - run: nix build --accept-flake-config .#nixosConfigurations.mothership.config.system.build.toplevel
+      - run: nix build --accept-flake-config .#nixosConfigurations.mothership.config.system.build.toplevel $VERBOSE_FLAGS
 
   intel-macos:
     # runs-on: macos-12 # drachenflieger is on this version but runner deprecated
     runs-on: macos-15-intel
+    env:
+      VERBOSE_FLAGS: ${{ inputs.verbose == true && '--verbose --print-build-logs' || '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -32,10 +42,12 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - run: nix build --accept-flake-config .#darwinConfigurations.drachenflieger.config.system.build.toplevel
+      - run: nix build --accept-flake-config .#darwinConfigurations.drachenflieger.config.system.build.toplevel $VERBOSE_FLAGS
 
   arm-macos:
     runs-on: macos-26
+    env:
+      VERBOSE_FLAGS: ${{ inputs.verbose == true && '--verbose --print-build-logs' || '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -45,6 +57,6 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - run: nix build --accept-flake-config .#darwinConfigurations.MacBook-Pro-2.config.system.build.toplevel --verbose --print-build-logs
+      - run: nix build --accept-flake-config .#darwinConfigurations.MacBook-Pro-2.config.system.build.toplevel $VERBOSE_FLAGS
 
-      - run: nix build --accept-flake-config .#darwinConfigurations.damascus.config.system.build.toplevel
+      - run: nix build --accept-flake-config .#darwinConfigurations.damascus.config.system.build.toplevel $VERBOSE_FLAGS
