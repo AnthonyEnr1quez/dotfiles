@@ -2,8 +2,6 @@
   catppuccin = {
     flavor = "mocha";
 
-    cache.enable = true;
-
     bat.enable = true;
     eza.enable = true;
     fzf.enable = true;
