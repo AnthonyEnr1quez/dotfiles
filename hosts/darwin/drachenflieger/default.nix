@@ -3,6 +3,9 @@
     firefox = {
       enable = lib.mkForce false;
     };
+    zed = {
+      enable = lib.mkForce false;
+    };
 
     home.packages = with pkgs; [
       discord
