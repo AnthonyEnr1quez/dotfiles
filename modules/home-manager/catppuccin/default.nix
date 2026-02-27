@@ -10,7 +10,10 @@
     k9s.enable = true;
     kitty.enable = true;
     opencode.enable = true;
-    zed.enable = true;
+    zed = {
+      enable = true;
+      icons.enable = true;
+    };
     zsh-syntax-highlighting.enable = true;
   };
 }

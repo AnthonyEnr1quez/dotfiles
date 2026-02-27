@@ -27,6 +27,14 @@ in
         "sql"
         "terraform"
       ];
+      
+      userKeymaps = [
+        {
+          bindings = {
+            cmd-d = "editor::DeleteLine";
+          };
+        }
+      ];
 
       userSettings = {
         auto_update = false;
@@ -35,9 +43,22 @@ in
             milliseconds = 1000;
           };
         };
+        use_system_window_tabs = true;
         telemetry = {
           metrics = false;
         };
+        
+        buffer_font_family = "Hack Nerd Font";
+        buffer_font_size = 14;
+        buffer_font_features = {
+          calt = false; # disable ligatures
+        };
+        terminal = {
+          font_family = "Hack Nerd Font";
+          font_size = 14;
+        };
+        ui_font_family = "Hack Nerd Font";
+        ui_font_size = 14;
       };
     };
   };
