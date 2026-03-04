@@ -4,7 +4,7 @@
 
       packages = with pkgs; [
         htop
-        neofetch
+        fastfetch
         cowsay
       ];
 
