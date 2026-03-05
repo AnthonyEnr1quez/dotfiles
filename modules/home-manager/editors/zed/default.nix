@@ -27,7 +27,7 @@ in
         "sql"
         "terraform"
       ];
-      
+
       userKeymaps = [
         {
           bindings = {
@@ -47,7 +47,7 @@ in
         telemetry = {
           metrics = false;
         };
-        
+
         buffer_font_family = "Hack Nerd Font";
         buffer_font_size = 14;
         buffer_font_features = {
