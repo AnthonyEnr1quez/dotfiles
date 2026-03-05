@@ -2,7 +2,7 @@
 let
   name = "opencode";
   cfg = config.${name};
-  
+
   go-modern-guidelines = pkgs.fetchFromGitHub {
     owner = "JetBrains";
     repo = "go-modern-guidelines";
@@ -24,7 +24,7 @@ in
       opencode = {
         enable = true;
         package = pkgs.llm-agents.opencode;
-        
+
         skills = {
           use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
         };
@@ -53,11 +53,12 @@ in
               ".env.local" = "deny";
               ".env.*.local" = "deny";
 
-              # Secrets directories
+              # Secrets
               "**/secrets/**" = "deny";
               "**/.secrets/**" = "deny";
               "secrets/**" = "deny";
               ".secrets/**" = "deny";
+              "*secret*" = "deny";
 
               # SSH keys (fully qualified + patterns)
               "${config.home.homeDirectory}/.ssh/**" = "deny";
@@ -73,8 +74,21 @@ in
               "**/*_ed25519.*" = "deny";
               "**/*_ecdsa" = "deny";
               "**/*_ecdsa.*" = "deny";
+
+              # Various keys
               "*.pem" = "deny";
+              "*.pem*" = "deny";
               "*.key" = "deny";
+              "*.key*" = "deny";
+              "*.pk" = "deny";
+              "*.pk*" = "deny";
+              "*.crt" = "deny";
+              "*.crt*" = "deny";
+              "*.csr" = "deny";
+              "*.csr*" = "deny";
+              "*.cer" = "deny";
+              "*.cer*" = "deny";
+              "*sftp*" = "deny";
 
               # GPG keys
               "${config.home.homeDirectory}/.gnupg/**" = "deny";
@@ -84,7 +98,7 @@ in
               "${config.home.homeDirectory}/.azure/**" = "deny";
               "${config.xdg.configHome}/gcloud/**" = "deny";
 
-              # VCS credentials TODO
+              # VCS credentials
               "${config.xdg.configHome}/gh/hosts.yml" = "deny";
 
               # Container/Kubernetes secrets
