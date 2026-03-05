@@ -1,6 +1,15 @@
 { config, pkgs, lib, ... }:
 let
   mfPath = "${config.user.home}/Projects/moov/mf";
+
+  goland = pkgs.jetbrains.goland.overrideAttrs (_: rec {
+    version = "2025.3.3";
+    src = pkgs.fetchurl {
+      url = "https://download.jetbrains.com/go/goland-${version}-aarch64.dmg";
+      hash = "sha256-v98kJnaxyAvo5aNgmgU4tR2BSR0etZgxxP9abJ6vBb4=";
+      # hash = lib.fakeHash;
+    };
+  });
 in
 {
   hm = {
@@ -10,7 +19,7 @@ in
         wget
         opentofu
         spacectl
-        jetbrains.goland
+        goland
         jq
         gotools
 
