@@ -55,8 +55,6 @@ in
             mrmlnc.vscode-json5
           ])
           ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace-release; [
-            # github.copilot
-            # github.copilot-chat
           ]);
       };
 
