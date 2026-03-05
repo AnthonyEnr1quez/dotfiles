@@ -2,6 +2,13 @@
 let
   name = "opencode";
   cfg = config.${name};
+  
+  go-modern-guidelines = pkgs.fetchFromGitHub {
+    owner = "JetBrains";
+    repo = "go-modern-guidelines";
+    rev = "3a7f3eecd29f45e341f4e258d38fe8548ca05050"; # main
+    sha256 = "sha256-NJBwg3Ok5I2POZzQZZ1v+l7rfAidxNvLjnOR6bR0wNg=";
+  };
 
   inherit (lib) mkIf mkEnableOption;
 in
@@ -17,6 +24,10 @@ in
       opencode = {
         enable = true;
         package = pkgs.llm-agents.opencode;
+        
+        skills = {
+          use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
+        };
 
         settings = {
           tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
