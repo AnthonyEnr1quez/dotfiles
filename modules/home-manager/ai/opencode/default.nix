@@ -7,7 +7,7 @@ let
     owner = "JetBrains";
     repo = "go-modern-guidelines";
     rev = "3a7f3eecd29f45e341f4e258d38fe8548ca05050"; # main
-    sha256 = "sha256-NJBwg3Ok5I2POZzQZZ1v+l7rfAidxNvLjnOR6bR0wNg=";
+    sha256 = "1n60fjsfk4bkiv5xpi4x11yfnppsdyfnbl4w767qvr54ff1p141l";
   };
 
   inherit (lib) mkIf mkEnableOption;
