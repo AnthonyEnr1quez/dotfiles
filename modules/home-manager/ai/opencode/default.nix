@@ -23,7 +23,6 @@ in
       ripgrep.enable = true; # dependency
       opencode = {
         enable = true;
-        package = pkgs.llm-agents.opencode;
 
         skills = {
           use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";

@@ -7,7 +7,6 @@
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
       "https://catppuccin.cachix.org"
-      "https://cache.numtide.com"
       "https://anthonyenr1quez.cachix.org"
     ];
 
@@ -15,7 +14,6 @@
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "catppuccin.cachix.org-1:noG/4HkbhJb+lUAdKrph6LaozJvAeEEZj4N732IysmU="
-      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
       "anthonyenr1quez.cachix.org-1:Gclb+0ZEVse0quS5IhHiYRsb9QgZ7oSPRfKPNHOl3eI="
     ];
   };
@@ -25,10 +23,6 @@
     stable.url = "github:NixOS/nixpkgs/nixos-25.11";
 
     systems.url = "github:nix-systems/default";
-    flake-parts = {
-      url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
-    };
     flake-utils = {
       url = "github:numtide/flake-utils";
       inputs.systems.follows = "systems";
@@ -49,22 +43,7 @@
     };
     nur = {
       url = "github:nix-community/NUR";
-      inputs = {
-        flake-parts.follows = "flake-parts";
-        nixpkgs.follows = "nixpkgs";
-      };
-    };
-    llm-agents = {
-      url = "github:numtide/llm-agents.nix";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        blueprint.inputs.systems.follows = "systems";
-        bun2nix.inputs = {
-          flake-parts.follows = "flake-parts";
-          systems.follows = "systems";
-          treefmt-nix.follows = "llm-agents/treefmt-nix";
-        };
-      };
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     nixos-wsl = {
@@ -84,7 +63,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, llm-agents, nixos-wsl, vscode-server, ... }:
+  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, nixos-wsl, vscode-server, ... }:
     let
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -99,7 +78,6 @@
               { pkgs, config, inputs, ... }:
                 {
                   nixpkgs.overlays = [
-                    llm-agents.overlays.default
                     nur.overlays.default
                     nix-vscode-extensions.overlays.default
                   ];
@@ -135,7 +113,6 @@
               { pkgs, config, inputs, ... }:
                 {
                   nixpkgs.overlays = [
-                    llm-agents.overlays.default
                     nix-vscode-extensions.overlays.default
                   ];
                 }
