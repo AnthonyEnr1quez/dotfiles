@@ -17,12 +17,12 @@ in
     enable = mkEnableOption name;
   };
 
-  # models-dev marked as bad platform on intel darwin
   config = mkIf cfg.enable {
     programs = {
       ripgrep.enable = true; # dependency
       opencode = {
         enable = true;
+        enableMcpIntegration = true;
 
         skills = {
           use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
