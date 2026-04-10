@@ -33,6 +33,7 @@
     };
 
     home.packages = with pkgs; [
+      (lib.lowPrio orbstack) # low prio for bundled kubectl
       stats
     ];
 

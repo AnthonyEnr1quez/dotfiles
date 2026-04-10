@@ -59,7 +59,6 @@ in
 
   homebrew = {
     casks = [
-      "docker-desktop"
       "google-drive"
       "linear-linear"
       "notion"
