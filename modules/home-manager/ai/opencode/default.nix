@@ -6,8 +6,8 @@ let
   go-modern-guidelines = pkgs.fetchFromGitHub {
     owner = "JetBrains";
     repo = "go-modern-guidelines";
-    rev = "3a7f3eecd29f45e341f4e258d38fe8548ca05050"; # main
-    sha256 = "1n60fjsfk4bkiv5xpi4x11yfnppsdyfnbl4w767qvr54ff1p141l";
+    rev = "ebf0aa738bb6cc0a9127131e2ea7b24c660e1428"; # main
+    sha256 = "05wcr26v5mdv647zcgm1w0l715rnlair8pdvjrhbisljswz0wah9";
   };
 
   inherit (lib) mkIf mkEnableOption;
