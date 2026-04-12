@@ -9,6 +9,13 @@ let
     rev = "ebf0aa738bb6cc0a9127131e2ea7b24c660e1428"; # main
     sha256 = "05wcr26v5mdv647zcgm1w0l715rnlair8pdvjrhbisljswz0wah9";
   };
+  
+  stop-slop = pkgs.fetchFromGitHub {
+    owner = "hardikpandya";
+    repo = "stop-slop";
+    rev = "8da1f030185bdfe8471220585162991eaeb970e9"; # main
+    sha256 = "sha256-JMqlCRVEAfwG1TLMDpnamznkBfkmX6e2XyETTTH/TSE=";
+  };
 
   inherit (lib) mkIf mkEnableOption;
 in
@@ -27,6 +34,7 @@ in
 
         skills = {
           use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
+          stop-slop = "${stop-slop}";
         };
         
         tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
