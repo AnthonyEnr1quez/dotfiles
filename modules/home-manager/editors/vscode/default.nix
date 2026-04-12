@@ -20,6 +20,12 @@ in
       type = types.package;
       default = pkgs.vscodium;
     };
+
+    fontFamily = mkOption {
+      description = "The font family to use in the editor.";
+      type = types.str;
+      default = "Hack Nerd Font Mono";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -40,6 +46,7 @@ in
           "workbench.colorTheme" = "Owlet (Default)";
           "files.autoSave" = "afterDelay";
           "editor.bracketPairColorization.enabled" = true;
+          "editor.fontFamily" = cfg.fontFamily;
           "editor.fontSize" = 14;
           "editor.tabSize" = 2;
           "diffEditor.ignoreTrimWhitespace" = false;

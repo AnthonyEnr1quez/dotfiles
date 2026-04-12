@@ -27,7 +27,6 @@
       enable = true;
       package = pkgs.vscodium;
     };
-    programs.vscode.profiles.default.userSettings."editor.fontFamily" = "Hack Nerd Font Mono";
     zed = {
       enable = true;
     };
