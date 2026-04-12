@@ -4,6 +4,10 @@ let
 in
 let
   cfg = config.${name};
+  
+  # https://github.com/nix-community/nix-vscode-extensions/issues/182
+  # Fix invalid semver 1.112.01907 -> 1.112.0
+  fixedVersion = "1.112.0";
 
   inherit (lib) mkIf mkEnableOption mkOption types;
 in
@@ -21,7 +25,12 @@ in
   config = mkIf cfg.enable {
     programs.vscode = {
       enable = true;
-      package = cfg.package;
+      # Override the package to fix the version string
+      package = cfg.package.overrideAttrs (old: {
+        version = fixedVersion;
+        # We're intentionally only changing the version string for forVSCodeVersion compatibility
+        __intentionallyOverridingVersion = true;
+      });
 
       profiles.default = {
         enableExtensionUpdateCheck = false;
@@ -46,15 +55,15 @@ in
             ms-kubernetes-tools.vscode-kubernetes-tools
             redhat.vscode-yaml
           ])
-          ++ (with (pkgs.forVSCodeVersion cfg.package.version).open-vsx; [
+          ++ (with (pkgs.forVSCodeVersion fixedVersion).open-vsx; [
             alphabotsec.vscode-eclipse-keybindings
             itsjonq.owlet
             opentofu.vscode-opentofu
           ])
-          ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace; [
+          ++ (with (pkgs.forVSCodeVersion fixedVersion).vscode-marketplace; [
             mrmlnc.vscode-json5
           ])
-          ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace-release; [
+          ++ (with (pkgs.forVSCodeVersion fixedVersion).vscode-marketplace-release; [
           ]);
       };
 

@@ -17,7 +17,8 @@ in
     enable = mkEnableOption name;
   };
 
-  config = mkIf cfg.enable {
+  # temp disable for intel darwin
+  config = mkIf (cfg.enable && !(pkgs.stdenvNoCC.hostPlatform.isDarwin && pkgs.stdenvNoCC.hostPlatform.isx86_64)) {
     programs = {
       ripgrep.enable = true; # dependency
       opencode = {
