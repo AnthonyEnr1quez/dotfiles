@@ -16,7 +16,7 @@ in
 
       servers = {
         linear = {
-          url = " https://mcp.linear.app/mcp";
+          url = "https://mcp.linear.app/mcp";
         };
       };
     };
