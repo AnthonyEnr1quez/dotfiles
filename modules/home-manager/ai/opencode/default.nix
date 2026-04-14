@@ -14,7 +14,7 @@ let
     owner = "hardikpandya";
     repo = "stop-slop";
     rev = "8da1f030185bdfe8471220585162991eaeb970e9"; # main
-    sha256 = "sha256-JMqlCRVEAfwG1TLMDpnamznkBfkmX6e2XyETTTH/TSE=";
+    sha256 = "08adzwqls4r1byvafpr6z42y8fcvvachxk1jsl3gq0a42l4sbji4";
   };
 
   inherit (lib) mkIf mkEnableOption;
