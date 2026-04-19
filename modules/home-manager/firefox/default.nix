@@ -6,8 +6,8 @@ let
   firefox-csshacks = pkgs.fetchFromGitHub {
     owner = "MrOtherGuy";
     repo = "firefox-csshacks";
-    rev = "d02c1a92fa86777f3ae52f19e0c338a67eabe908"; # master
-    sha256 = "1gprj0ciz39mvkrcd7jw0iv4nffc9x85i2851p906xjyls7xs9jc";
+    rev = "55cdb2938da52407aeff7093c979dafb7782e7c9"; # master
+    sha256 = "1d3qw7v0n2am6hllrl2rbcka9p0mnghc4xmg620n4qkbwvwvfpgs";
   };
 
   cfg = config.${name};
