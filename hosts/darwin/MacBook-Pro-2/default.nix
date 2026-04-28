@@ -17,7 +17,6 @@ in
 
     home = {
       packages = with pkgs; [
-        gh
         wget
         opentofu
         spacectl
@@ -43,6 +42,12 @@ in
     };
 
     programs = {
+      gh= {
+        enable = true;
+        gitCredentialHelper.enable = false;
+        settings.telemetry = "disabled";
+      };
+      
       zsh = {
         cdpath = [ mfPath ];
       };

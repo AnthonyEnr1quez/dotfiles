@@ -14,6 +14,7 @@
     };
 
     home.sessionVariables = {
+      DO_NOT_TRACK = "true";
       KUBECONFIG = "${config.user.home}/.config/kube/config";
     };
   };
