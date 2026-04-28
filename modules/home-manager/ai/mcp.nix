@@ -42,7 +42,7 @@ in
           enabled = false;
         };
         gke = {
-          url = "https://container.googleapis.com/mcp"
+          url = "https://container.googleapis.com/mcp";
           enabled = false;
         };
       };
