@@ -36,6 +36,15 @@ in
           args = [ "mcp" "server" ];
           enabled = false;
         };
+        
+        bigquery = {
+          url = "https://bigquery.googleapis.com/mcp";
+          enabled = false;
+        };
+        gke = {
+          url = "https://container.googleapis.com/mcp"
+          enabled = false;
+        };
       };
     };
   };
