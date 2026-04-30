@@ -65,7 +65,7 @@ in
   homebrew = {
     casks = [
       "google-drive"
-      "linear-linear"
+      "linear"
       "notion"
       "1password"
     ];
