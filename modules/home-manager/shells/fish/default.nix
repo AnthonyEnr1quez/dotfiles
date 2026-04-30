@@ -6,7 +6,7 @@
   programs.fish = {
     enable = true;
 
-    generateCompletions = true;
+    # generateCompletions = true;
 
     functions = {
       fish_right_prompt.body = ''
