@@ -61,4 +61,4 @@ jobs:
 
       - run: nix build --accept-flake-config .#darwinConfigurations.damascus.config.system.build.toplevel $VERBOSE_FLAGS
 
-      - run: nix build .#devShells.aarch64-darwin.mf
+      - run: nix build --accept-flake-config .#devShells.aarch64-darwin.mf $VERBOSE_FLAGS
