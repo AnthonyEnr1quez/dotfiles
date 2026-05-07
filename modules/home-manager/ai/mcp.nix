@@ -17,34 +17,35 @@ in
       servers = {
         honeycomb = {
           url = "https://mcp.honeycomb.io/mcp";
-          enabled = false;
+          disabled = true;
         };
         linear = {
           url = "https://mcp.linear.app/mcp";
-          enabled = false;
+          disabled = true;
         };
         notion = {
           url = "https://mcp.notion.com/mcp";
-          enabled = false;
+          disabled = true;
         };
         readable = {
           url = "https://readable.page/mcp";
-          enabled = false;
+          disabled = true;
         };
         spacelift = {
           command = "spacectl";
           args = [ "mcp" "server" ];
-          enabled = false;
+          disabled = true;
         };
         
-        bigquery = {
-          url = "https://bigquery.googleapis.com/mcp";
-          enabled = false;
-        };
-        gke = {
-          url = "https://container.googleapis.com/mcp";
-          enabled = false;
-        };
+        # https://github.com/anomalyco/opencode/issues/8581
+        # bigquery = {
+        #   url = "https://bigquery.googleapis.com/mcp";
+        #   enabled = false;
+        # };
+        # gke = {
+        #   url = "https://container.googleapis.com/mcp";
+        #   enabled = false;
+        # };
       };
     };
   };
