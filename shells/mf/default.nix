@@ -1,18 +1,5 @@
 { pkgs }:
 let
-  bumper = pkgs.buildGoModule rec {
-    pname = "bumper";
-    version = "0.7.0";
-    src = builtins.fetchGit {
-      url = "git@github.com:moovfinancial/bumper.git";
-      ref = "refs/tags/v${version}";
-      rev = "5ba9910ffe583dcaccace03ba8130f96b7243aca";
-    };
-    doCheck = false;
-    # vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-    vendorHash = "sha256-yjHEIJ7MWg7JUUDl/3zvGG+Mumnk2CV6enYL+xMNsNY=";
-  };
-
   sift = pkgs.buildGoModule rec {
     pname = "sift";
     version = "0.12.0";
@@ -76,7 +63,6 @@ let
     pdev-test = mkScriptPackage {
       name = "pdev-test";
       deps = [
-        bumper
         pkgs.coreutils
         pkgs.git
       ];
@@ -106,7 +92,6 @@ pkgs.mkShell ({
 
     sift
     oq
-    bumper
   ] ++ scripts;
 
   env = {
