@@ -8,6 +8,7 @@
       "$GOPATH/bin"
     ];
     sessionVariables = {
+      GOPATH = "${config.home.homeDirectory}/go";
       GOTOOLCHAIN = "local";
     };
   };

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+export PATH="${GOPATH:-$HOME/go}/bin:$PATH"
+
 service_name=$(basename -s .git `git config --get remote.origin.url`)
 short_sha=$(git rev-parse --short HEAD)
 
