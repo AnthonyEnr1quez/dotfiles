@@ -1045,6 +1045,9 @@ in
               "${config.xdg.cacheHome}/*" = "allow";
               "${config.xdg.dataHome}/*" = "allow";
 
+              # ALLOW: Go module cache (read-only dependency source)
+              "${config.home.homeDirectory}/go/pkg/mod/*" = "allow";
+
               # ALLOW: Non-sensitive config directories (fully qualified paths)
               "${config.xdg.configHome}/*" = "allow"; # General config (but SSH/GPG denied by read rules)
 
