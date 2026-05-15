@@ -25,7 +25,6 @@
 
     vscode = {
       enable = true;
-      package = pkgs.vscodium;
     };
     zed = {
       enable = true;
