@@ -39,7 +39,7 @@ in
             cmd-left = "pane::GoBack";
             cmd-right = "pane::GoForward";
             f4 = "editor::FindAllReferences";
-            
+
             cmd-h = "pane::DeploySearch";
             # cmd-h = "search::ToggleReplace";
           };

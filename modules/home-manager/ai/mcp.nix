@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }: 
+{ lib, config, pkgs, ... }:
 let
   name = "mcp";
   cfg = config.${name};
@@ -36,7 +36,7 @@ in
           args = [ "mcp" "server" ];
           disabled = true;
         };
-        
+
         # https://github.com/anomalyco/opencode/issues/8581
         # bigquery = {
         #   url = "https://bigquery.googleapis.com/mcp";

@@ -4,7 +4,7 @@ let
 in
 let
   cfg = config.${name};
-  
+
   # https://github.com/nix-community/nix-vscode-extensions/issues/182
   # Fix invalid semver 1.112.01907 -> 1.112.0
   fixedVersion = "1.112.0";
