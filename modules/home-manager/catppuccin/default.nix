@@ -1,5 +1,7 @@
 { config, pkgs, ... }: {
   catppuccin = {
+    enable = true;
+    autoEnable = false;
     flavor = "mocha";
 
     bat.enable = true;
