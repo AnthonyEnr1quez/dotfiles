@@ -40,6 +40,8 @@ in
         tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
 
         settings = {
+          lsp = true; # todo gopls on mod and sum?
+
           # https://github.com/wimpysworld/nix-config/blob/4ce6c0e6afffcd6586306cd92499c4fb62efe749/home-manager/_mixins/development/opencode/default.nix
           permission = {
             # Safe operations - allow without prompting
