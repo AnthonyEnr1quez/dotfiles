@@ -195,6 +195,29 @@
         "type": "github"
       }
     },
+    "opencode-session-search": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1781099189,
+        "narHash": "sha256-lt+tjCxowBsR6xSJx5LgHWBWT9NeqCip75VJjAB9gNE=",
+        "owner": "kasbah",
+        "repo": "opencode-session-search",
+        "rev": "41566965e392bc0987df1b183d4d99708760c0ae",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kasbah",
+        "repo": "opencode-session-search",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "catppuccin": "catppuccin",
@@ -205,6 +228,7 @@
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs",
         "nur": "nur",
+        "opencode-session-search": "opencode-session-search",
         "stable": "stable",
         "systems": "systems",
         "vscode-server": "vscode-server"
