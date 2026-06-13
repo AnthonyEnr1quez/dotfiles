@@ -8,7 +8,7 @@ with lib;
 
   time.timeZone = "America/Chicago";
 
-  system.stateVersion = "25.11";
+  system.stateVersion = "26.05";
   environment.systemPackages = with pkgs; [ git vim wget bottom ];
 
   # users.users.nixos.isNormalUser = true;
