@@ -1,4 +1,9 @@
 { config, pkgs, lib, ... }: {
+  # Set to true temporarily to (re)build the agent-sandbox micro VM locally,
+  # then back to false to free the builder VM's resources. Normally the VM
+  # closure is built in CI and pulled from cachix, so this can stay false.
+  microvm.linuxBuilder.enable = false;
+
   hm = {
     firefox = {
       bookmarksToolbar = "never";
