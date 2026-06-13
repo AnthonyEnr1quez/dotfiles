@@ -29,7 +29,9 @@ jobs:
       - run: nix build --accept-flake-config .#nixosConfigurations.mothership.config.system.build.toplevel $VERBOSE_FLAGS
 
   arm-linux:
-    # Validates the aarch64-linux agent-sandbox micro VM builds on PRs.
+    # Validates the aarch64-linux agent-sandbox micro VM system closure builds
+    # on PRs. The vfkit runner is aarch64-darwin and is exercised in the Cachix
+    # workflow post-merge (it needs the linux closure in cache first).
     runs-on: ubuntu-24.04-arm
     env:
       VERBOSE_FLAGS: ${{ inputs.verbose == true && '--verbose --print-build-logs' || '' }}
@@ -41,8 +43,6 @@ jobs:
         uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
         with:
           nix_path: nixpkgs=channel:nixos-unstable
-
-      - run: nix build --accept-flake-config .#nixosConfigurations.agent-sandbox.config.microvm.declaredRunner $VERBOSE_FLAGS
 
       - run: nix build --accept-flake-config .#nixosConfigurations.agent-sandbox.config.system.build.toplevel $VERBOSE_FLAGS
 
