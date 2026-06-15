@@ -174,6 +174,7 @@
           specialArgs = { inherit self inputs; };
           modules = [
             microvm.nixosModules.microvm
+            home-manager.nixosModules.home-manager
             ./modules/microvm/vm.nix
             { microvm.vmHostPackages = microvmNixpkgs.legacyPackages.aarch64-darwin; }
           ];
