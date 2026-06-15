@@ -30,7 +30,7 @@ jobs:
 
   intel-macos:
     # runs-on: macos-12 # drachenflieger is on this version but runner deprecated
-    runs-on: macos-15-intel
+    runs-on: macos-26-intel
     env:
       VERBOSE_FLAGS: ${{ inputs.verbose == true && '--verbose --print-build-logs' || '' }}
     steps:
