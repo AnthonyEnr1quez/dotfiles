@@ -63,6 +63,9 @@ in
   };
 
   homebrew = {
+    brews = [
+      "herdr"
+    ];
     casks = [
       "google-drive"
       "linear"
