@@ -3,6 +3,13 @@ let
   name = "opencode";
   cfg = config.${name};
 
+  google-skills = pkgs.fetchFromGitHub {
+    owner = "google";
+    repo = "skills";
+    rev = "cdbd650dfefa4f3cba7ccf05f9fa8f746ba47282"; # main;
+    sha256 = "sha256-6My0Hyf9nYsiSF8hKfjJSW/JeIG1OWymzzNmMEmo/oA=";
+  };
+
   go-modern-guidelines = pkgs.fetchFromGitHub {
     owner = "JetBrains";
     repo = "go-modern-guidelines";
@@ -45,8 +52,12 @@ in
         enableMcpIntegration = true;
 
         skills = {
-          use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
+          alloydb-basics = "${google-skills}/skills/cloud/alloydb-basics";
+          bigquery-basics = "${google-skills}/skills/cloud/bigquery-basics";
+          cloud-run-basics = "${google-skills}/skills/cloud/cloud-run-basics";
+          gke-basics = "${google-skills}/skills/cloud/gke-basics";
           stop-slop = "${stop-slop}";
+          use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
         };
 
         tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
