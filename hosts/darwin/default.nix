@@ -34,10 +34,5 @@
       (lib.lowPrio orbstack) # low prio for bundled kubectl
       stats
     ];
-
-    # todo same for fish?
-    programs.zsh.profileExtra = ''
-      eval "$(/opt/homebrew/bin/brew shellenv)"
-    '';
   };
 }
