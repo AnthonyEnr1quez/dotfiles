@@ -29,6 +29,7 @@
       kubectx
       # kubelogin
       # kubernetes-helm-wrapped
+      mouser
       # pgadmin4
       # slack
       unar
