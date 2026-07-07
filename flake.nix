@@ -49,7 +49,7 @@
       url = "github:kasbah/opencode-session-search";
       inputs = {
         flake-utils.follows = "flake-utils";
-        nixpkgs.follows = "nixpkgs";
+        # nixpkgs.follows = "nixpkgs"; # breaking builds
       };
     };
 
