@@ -174,22 +174,6 @@
         "type": "github"
       }
     },
-    "nixpkgs_2": {
-      "locked": {
-        "lastModified": 1772956932,
-        "narHash": "sha256-M0yS4AafhKxPPmOHGqIV0iKxgNO8bHDWdl1kOwGBwRY=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "608d0cadfed240589a7eea422407a547ad626a14",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nur": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -211,27 +195,6 @@
         "type": "github"
       }
     },
-    "opencode-session-search": {
-      "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
-        "nixpkgs": "nixpkgs_2"
-      },
-      "locked": {
-        "lastModified": 1782306336,
-        "narHash": "sha256-BChpoZXpBXZPzXXjsUvQKxh3TjJU/NOmNhe9LflIoNI=",
-        "owner": "kasbah",
-        "repo": "opencode-session-search",
-        "rev": "e332188bf8758eb371466cb33fe7982ad6b0cb60",
-        "type": "github"
-      },
-      "original": {
-        "owner": "kasbah",
-        "repo": "opencode-session-search",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "catppuccin": "catppuccin",
@@ -242,7 +205,6 @@
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs",
         "nur": "nur",
-        "opencode-session-search": "opencode-session-search",
         "stable": "stable",
         "systems": "systems",
         "vscode-server": "vscode-server"

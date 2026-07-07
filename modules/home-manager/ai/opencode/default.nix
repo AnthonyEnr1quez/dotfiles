@@ -24,14 +24,6 @@ let
     sha256 = "08adzwqls4r1byvafpr6z42y8fcvvachxk1jsl3gq0a42l4sbji4";
   };
 
-  # Wrapper for opencode-session-search that points to the correct database location
-  # OpenCode stores its database in ~/.local/share/opencode on macOS
-  # but the dirs crate defaults to ~/Library/Application Support
-  opencode-session-search = pkgs.writeShellScriptBin "oss" ''
-    DB_PATH="''${XDG_DATA_HOME:-$HOME/.local/share}/opencode/opencode.db"
-    exec ${pkgs.opencode-session-search}/bin/opencode-session-search --db "$DB_PATH" "$@"
-  '';
-
   inherit (lib) mkIf mkEnableOption;
 in
 {
@@ -41,10 +33,6 @@ in
 
   # temp disable for intel darwin
   config = mkIf (cfg.enable && !(pkgs.stdenvNoCC.hostPlatform.isDarwin && pkgs.stdenvNoCC.hostPlatform.isx86_64)) {
-    home.packages = [
-      opencode-session-search
-    ];
-
     programs = {
       ripgrep.enable = true; # dependency
       opencode = {
