@@ -29,19 +29,24 @@ in
         "terraform"
       ];
 
+      mutableUserKeymaps = true; # TODO, make false once everything converted over from goland
       userKeymaps = [
         {
           bindings = {
             cmd-d = "editor::DeleteLine";
             cmd-g = "file_finder::Toggle";
+            cmd-h = "text_finder::Toggle";
             cmd-t = "editor::GoToImplementation";
             cmd-shift-t = "editor::GoToDefinition";
             cmd-left = "pane::GoBack";
             cmd-right = "pane::GoForward";
             f4 = "editor::FindAllReferences";
-
-            cmd-h = "pane::DeploySearch";
-            # cmd-h = "search::ToggleReplace";
+          };
+        }
+        {
+          context = "Picker && with_preview > Editor";
+          bindings = {
+            cmd-h = "picker::TogglePreview";
           };
         }
       ];
