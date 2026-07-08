@@ -45,14 +45,6 @@
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    opencode-session-search = {
-      url = "github:kasbah/opencode-session-search";
-      inputs = {
-        flake-utils.follows = "flake-utils";
-        nixpkgs.follows = "nixpkgs";
-      };
-    };
-
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -70,7 +62,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, nixos-wsl, vscode-server, opencode-session-search, ... }:
+  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, nixos-wsl, vscode-server, ... }:
     let
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -87,9 +79,6 @@
                   nixpkgs.overlays = [
                     nur.overlays.default
                     nix-vscode-extensions.overlays.default
-                    (final: prev: {
-                      opencode-session-search = opencode-session-search.packages.${prev.stdenv.hostPlatform.system}.default;
-                    })
                   ];
                   home-manager.sharedModules = [
                     catppuccin.homeModules.catppuccin
@@ -124,9 +113,6 @@
                 {
                   nixpkgs.overlays = [
                     nix-vscode-extensions.overlays.default
-                    (final: prev: {
-                      opencode-session-search = opencode-session-search.packages.${prev.stdenv.hostPlatform.system}.default;
-                    })
                   ];
                 }
             )
