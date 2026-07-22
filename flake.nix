@@ -23,6 +23,7 @@
     stable.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     systems.url = "github:nix-systems/default";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     flake-utils = {
       url = "github:numtide/flake-utils";
       inputs.systems.follows = "systems";
@@ -43,7 +44,10 @@
     };
     nur = {
       url = "github:nix-community/NUR";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        flake-parts.follows = "flake-parts";
+        nixpkgs.follows = "nixpkgs";
+      };
     };
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL";
@@ -51,10 +55,7 @@
     };
     vscode-server = {
       url = "github:msteen/nixos-vscode-server";
-      inputs = {
-        flake-utils.follows = "flake-utils";
-        nixpkgs.follows = "nixpkgs";
-      };
+      inputs.flake-parts.follows = "flake-parts";
     };
     nix-vscode-extensions = {
       url = "github:nix-community/nix-vscode-extensions";
