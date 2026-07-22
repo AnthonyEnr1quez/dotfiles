@@ -5,6 +5,6 @@
   ];
 
   home.packages = with pkgs; [
-    # herdr TODO, currently just on work pc with brew atm
+    # herdr TODO, currently just on work pc with brew atm, now has hm module
   ];
 }
