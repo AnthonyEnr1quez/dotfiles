@@ -131,7 +131,7 @@
     in
     {
       darwinConfigurations = {
-        drachenflieger = mkDarwinConfig { host = "drachenflieger"; system = "x86_64-darwin"; };
+        # drachenflieger = mkDarwinConfig { host = "drachenflieger"; system = "x86_64-darwin"; };
         damascus = mkDarwinConfig { host = "damascus"; };
         MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; profile = "work"; };
       };
