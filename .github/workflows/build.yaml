@@ -28,22 +28,6 @@ jobs:
 
       - run: nix build --accept-flake-config .#nixosConfigurations.mothership.config.system.build.toplevel $VERBOSE_FLAGS
 
-  intel-macos:
-    # runs-on: macos-12 # drachenflieger is on this version but runner deprecated
-    runs-on: macos-15-intel
-    env:
-      VERBOSE_FLAGS: ${{ inputs.verbose == true && '--verbose --print-build-logs' || '' }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-
-      - run: nix build --accept-flake-config .#darwinConfigurations.drachenflieger.config.system.build.toplevel $VERBOSE_FLAGS
-
   arm-macos:
     runs-on: macos-26
     env:

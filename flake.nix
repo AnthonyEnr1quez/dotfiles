@@ -67,7 +67,7 @@
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig =
-        { system ? "x86_64-darwin"
+        { system ? "aarch64-darwin"
         , host
         , nixpkgs ? inputs.nixpkgs
         , stable ? inputs.stable # # TODO is this needed with no overlays?
@@ -131,9 +131,9 @@
     in
     {
       darwinConfigurations = {
-        drachenflieger = mkDarwinConfig { host = "drachenflieger"; };
-        damascus = mkDarwinConfig { host = "damascus"; system = "aarch64-darwin"; };
-        MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; system = "aarch64-darwin"; profile = "work"; };
+        # drachenflieger = mkDarwinConfig { host = "drachenflieger"; system = "x86_64-darwin"; };
+        damascus = mkDarwinConfig { host = "damascus"; };
+        MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; profile = "work"; };
       };
 
       nixosConfigurations = {
