@@ -11,6 +11,10 @@ let
   isVSCodium = (cfg.package.pname or "") == "vscodium";
   programName = if isVSCodium then "vscodium" else "vscode";
 
+  # vscodium exposes the upstream VSCode version as `vscodeVersion`, while
+  # vscode uses its `version` directly.
+  vscodeVersion = if isVSCodium then cfg.package.vscodeVersion else cfg.package.version;
+
   sharedProfile = {
     enableExtensionUpdateCheck = false;
     enableUpdateCheck = false;
@@ -35,15 +39,15 @@ let
         ms-kubernetes-tools.vscode-kubernetes-tools
         redhat.vscode-yaml
       ])
-      ++ (with (pkgs.forVSCodeVersion cfg.package.version).open-vsx; [
+      ++ (with (pkgs.forVSCodeVersion vscodeVersion).open-vsx; [
         alphabotsec.vscode-eclipse-keybindings
         itsjonq.owlet
         opentofu.vscode-opentofu
       ])
-      ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace; [
+      ++ (with (pkgs.forVSCodeVersion vscodeVersion).vscode-marketplace; [
         mrmlnc.vscode-json5
       ])
-      ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace-release; [
+      ++ (with (pkgs.forVSCodeVersion vscodeVersion).vscode-marketplace-release; [
       ]);
   };
 
