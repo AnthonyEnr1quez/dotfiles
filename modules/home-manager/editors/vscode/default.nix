@@ -5,21 +5,11 @@ in
 let
   cfg = config.${name};
 
-  # https://github.com/nix-community/nix-vscode-extensions/issues/182
-  # Fix invalid semver 1.112.01907 -> 1.112.0
-  fixedVersion = "1.112.0";
-
   # Detect which home-manager module to target based on the package.
   # After nix-community/home-manager@80ab64b, VSCode forks have dedicated modules
   # (programs.vscodium, programs.cursor, etc.) instead of overriding programs.vscode.package.
   isVSCodium = (cfg.package.pname or "") == "vscodium";
   programName = if isVSCodium then "vscodium" else "vscode";
-
-  fixedPackage = cfg.package.overrideAttrs (old: {
-    version = fixedVersion;
-    # We're intentionally only changing the version string for forVSCodeVersion compatibility
-    __intentionallyOverridingVersion = true;
-  });
 
   sharedProfile = {
     enableExtensionUpdateCheck = false;
@@ -45,15 +35,15 @@ let
         ms-kubernetes-tools.vscode-kubernetes-tools
         redhat.vscode-yaml
       ])
-      ++ (with (pkgs.forVSCodeVersion fixedVersion).open-vsx; [
+      ++ (with (pkgs.forVSCodeVersion cfg.package.version).open-vsx; [
         alphabotsec.vscode-eclipse-keybindings
         itsjonq.owlet
         opentofu.vscode-opentofu
       ])
-      ++ (with (pkgs.forVSCodeVersion fixedVersion).vscode-marketplace; [
+      ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace; [
         mrmlnc.vscode-json5
       ])
-      ++ (with (pkgs.forVSCodeVersion fixedVersion).vscode-marketplace-release; [
+      ++ (with (pkgs.forVSCodeVersion cfg.package.version).vscode-marketplace-release; [
       ]);
   };
 
@@ -79,7 +69,7 @@ in
   config = mkIf cfg.enable {
     programs.${programName} = {
       enable = true;
-      package = fixedPackage;
+      package = cfg.package;
       profiles.default = sharedProfile;
       mutableExtensionsDir = false;
     };
