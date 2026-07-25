@@ -97,14 +97,10 @@
           ]
         , profile ? "personal"
         , extraModules ? [ ]
-          # Include the agent-sandbox micro VM tooling (linux-builder toggle +
-          # microvm-run). Only valid on aarch64-darwin hosts (vfkit).
-        , microvm ? false
         }:
         inputs.darwin.lib.darwinSystem {
           inherit system;
-          modules = baseModules ++ extraModules
-            ++ nixpkgs.lib.optional microvm ./modules/microvm/darwin.nix;
+          modules = baseModules ++ extraModules;
           specialArgs = { inherit self inputs nixpkgs host profile; };
         };
 
@@ -141,9 +137,16 @@
     {
       darwinConfigurations = {
         # drachenflieger = mkDarwinConfig { host = "drachenflieger"; system = "x86_64-darwin"; };
-        
-        damascus = mkDarwinConfig { host = "damascus"; microvm = true; };
-        MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; profile = "work"; microvm = true; };
+
+        damascus = mkDarwinConfig {
+          host = "damascus";
+          extraModules = [ ./modules/microvm/darwin.nix ];
+        };
+        MacBook-Pro-2 = mkDarwinConfig {
+          host = "MacBook-Pro-2";
+          profile = "work";
+          extraModules = [ ./modules/microvm/darwin.nix ];
+        };
       };
 
       nixosConfigurations = {
