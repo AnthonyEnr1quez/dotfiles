@@ -44,10 +44,7 @@
     };
     microvm = {
       url = "github:microvm-nix/microvm.nix";
-      # NOTE: intentionally NOT following our nixpkgs. microvm.nix's vfkit
-      # runner references `stdenv.hostPlatform.linux-kernel`, which our
-      # nixpkgs-unstable removed. Using microvm's pinned nixpkgs (which still
-      # has it) for the guest VM avoids that incompatibility.
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     nur = {
       url = "github:nix-community/NUR";
