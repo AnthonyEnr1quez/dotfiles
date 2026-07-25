@@ -1,9 +1,8 @@
 # Darwin-side wiring for the agent-sandbox micro VM.
 #
 # Provides:
-#   * a `microvm-run` command on PATH that boots the VM via vfkit, rebinding
-#     Ctrl-] to the interrupt/suspend/quit signals so Ctrl-C works *inside*
-#     the VM without shutting it down.
+#   * a `microvm-run` command on PATH that boots the VM via vfkit. Exit the VM
+#     with `poweroff` from its shell.
 #   * an opt-in NixOS linux-builder (aarch64-linux) needed to *build* the VM
 #     closure. It is off by default; flip `microvm.linuxBuilder.enable = true`
 #     and rebuild when you need to (re)build the VM, then turn it back off.
@@ -27,9 +26,9 @@ let
     runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
       "${flakeRef}#${runnerAttr}")
 
+    # Restore terminal settings on exit (vfkit puts the tty in raw mode).
     cleanup() { stty "$(stty -g)"; }
     trap cleanup EXIT
-    stty intr ^] susp ^] quit ^]
     exec "$runner/bin/microvm-run"
   '';
 in
@@ -37,7 +36,7 @@ in
   options.microvm.linuxBuilder.enable = lib.mkEnableOption ''
     the aarch64-linux NixOS linux-builder used to build the agent-sandbox
     micro VM. Enable temporarily while iterating on the VM config, then
-    disable to free the builder VM's resources (~1 vCPU / 3 GiB RAM)
+    disable to free the builder VM's resources (see the sizing below)
   '';
 
   config = {
