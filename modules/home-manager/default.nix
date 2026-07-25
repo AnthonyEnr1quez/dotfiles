@@ -29,8 +29,8 @@
       kubectx
       # kubelogin
       # kubernetes-helm-wrapped
-      nixd
       # mouser TODO, gesture support is somewhat mid as of 06/26, swapped on offline logi-options-+ https://hub.sync.logitech.com/options/post/logi-options-offline-manual-I2a7NSJyE6oH2oy
+      nixd
       # pgadmin4
       # slack
       # unar
