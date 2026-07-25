@@ -13,15 +13,9 @@
 # (via `nix build`) rather than embedding it as a build-time dependency of the
 # darwin system. Embedding it would force every `darwin-rebuild` to build the
 # VM, which requires the Linux builder and creates a chicken-and-egg problem.
-{ config, lib, pkgs, self, inputs, ... }:
+{ config, lib, pkgs, self, ... }:
 let
   cfg = config.microvm.linuxBuilder;
-
-  # nixpkgs-unstable's qemu 11.0.0 crashes the linux-builder VM on macOS
-  # (SIGABRT in hvf_arch_init_vcpu under Hypervisor.framework).
-  # See https://github.com/NixOS/nixpkgs/issues/528299. Use the stable
-  # (nixos-26.05) builder, which ships qemu 10.2.2 and works.
-  stablePkgs = inputs.stable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
 
   flakeRef = self.outPath;
   runnerAttr = "nixosConfigurations.agent-sandbox.config.microvm.declaredRunner";
@@ -53,7 +47,6 @@ in
       distributedBuilds = true;
       linux-builder = {
         enable = true;
-        package = stablePkgs.darwin.linux-builder;
         systems = [ "aarch64-linux" ];
 
         # Beefed-up builder VM for faster aarch64-linux builds while iterating.
