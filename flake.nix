@@ -69,10 +69,6 @@
 
   outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, microvm, nixos-wsl, vscode-server, ... }:
     let
-      # nixpkgs used to build the agent-sandbox guest VM. We use microvm.nix's
-      # own pinned nixpkgs (see the `microvm` input note) so the vfkit runner
-      # stays compatible.
-      microvmNixpkgs = microvm.inputs.nixpkgs;
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig =
@@ -154,14 +150,14 @@
         # LLM/agent sandbox micro VM, built for aarch64-linux and run on
         # Apple Silicon macOS via vfkit. Build/run through `microvm-run` on a
         # configured darwin host.
-        agent-sandbox = microvmNixpkgs.lib.nixosSystem {
+        agent-sandbox = nixpkgs.lib.nixosSystem {
           system = "aarch64-linux";
           specialArgs = { inherit self inputs; };
           modules = [
             microvm.nixosModules.microvm
             home-manager.nixosModules.home-manager
             ./modules/microvm/vm.nix
-            { microvm.vmHostPackages = microvmNixpkgs.legacyPackages.aarch64-darwin; }
+            { microvm.vmHostPackages = nixpkgs.legacyPackages.aarch64-darwin; }
           ];
         };
 
