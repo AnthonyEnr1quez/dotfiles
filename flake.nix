@@ -23,6 +23,7 @@
     stable.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     systems.url = "github:nix-systems/default";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     flake-utils = {
       url = "github:numtide/flake-utils";
       inputs.systems.follows = "systems";
@@ -50,26 +51,18 @@
     };
     nur = {
       url = "github:nix-community/NUR";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    opencode-session-search = {
-      url = "github:kasbah/opencode-session-search";
       inputs = {
-        flake-utils.follows = "flake-utils";
+        flake-parts.follows = "flake-parts";
         nixpkgs.follows = "nixpkgs";
       };
     };
-
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     vscode-server = {
       url = "github:msteen/nixos-vscode-server";
-      inputs = {
-        flake-utils.follows = "flake-utils";
-        nixpkgs.follows = "nixpkgs";
-      };
+      inputs.flake-parts.follows = "flake-parts";
     };
     nix-vscode-extensions = {
       url = "github:nix-community/nix-vscode-extensions";
@@ -77,7 +70,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, microvm, nixos-wsl, vscode-server, opencode-session-search, ... }:
+  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, microvm, nixos-wsl, vscode-server, ... }:
     let
       # nixpkgs used to build the agent-sandbox guest VM. We use microvm.nix's
       # own pinned nixpkgs (see the `microvm` input note) so the vfkit runner
@@ -86,7 +79,7 @@
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
       mkDarwinConfig =
-        { system ? "x86_64-darwin"
+        { system ? "aarch64-darwin"
         , host
         , nixpkgs ? inputs.nixpkgs
         , stable ? inputs.stable # # TODO is this needed with no overlays?
@@ -98,9 +91,6 @@
                   nixpkgs.overlays = [
                     nur.overlays.default
                     nix-vscode-extensions.overlays.default
-                    (final: prev: {
-                      opencode-session-search = opencode-session-search.packages.${prev.stdenv.hostPlatform.system}.default;
-                    })
                   ];
                   home-manager.sharedModules = [
                     catppuccin.homeModules.catppuccin
@@ -139,9 +129,6 @@
                 {
                   nixpkgs.overlays = [
                     nix-vscode-extensions.overlays.default
-                    (final: prev: {
-                      opencode-session-search = opencode-session-search.packages.${prev.stdenv.hostPlatform.system}.default;
-                    })
                   ];
                 }
             )
@@ -160,9 +147,10 @@
     in
     {
       darwinConfigurations = {
-        drachenflieger = mkDarwinConfig { host = "drachenflieger"; };
-        damascus = mkDarwinConfig { host = "damascus"; system = "aarch64-darwin"; microvm = true; };
-        MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; system = "aarch64-darwin"; profile = "work"; microvm = true; };
+        # drachenflieger = mkDarwinConfig { host = "drachenflieger"; system = "x86_64-darwin"; };
+        
+        damascus = mkDarwinConfig { host = "damascus"; microvm = true; };
+        MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; profile = "work"; microvm = true; };
       };
 
       nixosConfigurations = {

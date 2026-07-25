@@ -3,6 +3,13 @@ let
   name = "opencode";
   cfg = config.${name};
 
+  google-skills = pkgs.fetchFromGitHub {
+    owner = "google";
+    repo = "skills";
+    rev = "cdbd650dfefa4f3cba7ccf05f9fa8f746ba47282"; # main;
+    sha256 = "sha256-6My0Hyf9nYsiSF8hKfjJSW/JeIG1OWymzzNmMEmo/oA=";
+  };
+
   go-modern-guidelines = pkgs.fetchFromGitHub {
     owner = "JetBrains";
     repo = "go-modern-guidelines";
@@ -17,14 +24,6 @@ let
     sha256 = "08adzwqls4r1byvafpr6z42y8fcvvachxk1jsl3gq0a42l4sbji4";
   };
 
-  # Wrapper for opencode-session-search that points to the correct database location
-  # OpenCode stores its database in ~/.local/share/opencode on macOS
-  # but the dirs crate defaults to ~/Library/Application Support
-  opencode-session-search = pkgs.writeShellScriptBin "oss" ''
-    DB_PATH="''${XDG_DATA_HOME:-$HOME/.local/share}/opencode/opencode.db"
-    exec ${pkgs.opencode-session-search}/bin/opencode-session-search --db "$DB_PATH" "$@"
-  '';
-
   inherit (lib) mkIf mkEnableOption;
 in
 {
@@ -32,12 +31,7 @@ in
     enable = mkEnableOption name;
   };
 
-  # temp disable for intel darwin
-  config = mkIf (cfg.enable && !(pkgs.stdenvNoCC.hostPlatform.isDarwin && pkgs.stdenvNoCC.hostPlatform.isx86_64)) {
-    home.packages = [
-      opencode-session-search
-    ];
-
+  config = mkIf cfg.enable {
     programs = {
       ripgrep.enable = true; # dependency
       opencode = {
@@ -45,8 +39,12 @@ in
         enableMcpIntegration = true;
 
         skills = {
-          use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
+          alloydb-basics = "${google-skills}/skills/cloud/alloydb-basics";
+          bigquery-basics = "${google-skills}/skills/cloud/bigquery-basics";
+          cloud-run-basics = "${google-skills}/skills/cloud/cloud-run-basics";
+          gke-basics = "${google-skills}/skills/cloud/gke-basics";
           stop-slop = "${stop-slop}";
+          use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
         };
 
         tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration

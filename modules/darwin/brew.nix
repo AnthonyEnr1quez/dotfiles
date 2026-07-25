@@ -1,6 +1,9 @@
 { pkgs, ... }: {
   homebrew = {
     enable = true;
+    enableBashIntegration = true;
+    enableFishIntegration = true;
+    enableZshIntegration = true;
 
     global = {
       autoUpdate = false;
@@ -14,7 +17,6 @@
 
     casks = [
       "alt-tab"
-      "logi-options+"
       "postman"
     ];
   };

@@ -19,6 +19,10 @@ in
           url = "https://mcp.honeycomb.io/mcp";
           disabled = true;
         };
+        incident-io = {
+          url = "https://mcp.incident.io/mcp";
+          disabled = true;
+        };
         linear = {
           url = "https://mcp.linear.app/mcp";
           disabled = true;
