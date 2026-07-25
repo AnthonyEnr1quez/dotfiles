@@ -89,14 +89,14 @@
     home = lib.mkForce "/root";
   };
 
-  # The opencode home-manager module references pkgs.opencode-session-search
-  # (an overlay our host configs add). Provide it here too so the module works.
-  nixpkgs.overlays = [
-    (final: prev: {
-      opencode-session-search =
-        inputs.opencode-session-search.packages.${prev.stdenv.hostPlatform.system}.default;
-    })
-  ];
+  # # The opencode home-manager module references pkgs.opencode-session-search
+  # # (an overlay our host configs add). Provide it here too so the module works.
+  # nixpkgs.overlays = [
+  #   (final: prev: {
+  #     opencode-session-search =
+  #       inputs.opencode-session-search.packages.${prev.stdenv.hostPlatform.system}.default;
+  #   })
+  # ];
 
   # GUI/desktop home-manager modules are opt-in (default off); enable just the
   # opencode agent so an agent can run fully inside the sandbox.
