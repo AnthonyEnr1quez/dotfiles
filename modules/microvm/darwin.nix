@@ -26,6 +26,14 @@ let
     runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
       "${flakeRef}#${runnerAttr}")
 
+    # vfkit creates the VM's disk image(s) in the current directory (the image
+    # paths in vm.nix are relative). Pin them to a stable per-user location so
+    # `microvm-run` works from anywhere and reuses the same persistent store
+    # overlay instead of littering images wherever it's launched.
+    statedir="$HOME/.local/share/microvm"
+    mkdir -p "$statedir"
+    cd "$statedir"
+
     # Restore terminal settings on exit (vfkit puts the tty in raw mode).
     cleanup() { stty "$(stty -g)"; }
     trap cleanup EXIT
