@@ -13,6 +13,8 @@ in
   };
 
   config = mkIf cfg.enable {
+    catppuccin.ghostty.enable = true;
+
     programs = {
       ghostty = {
         enable = true;

@@ -32,6 +32,8 @@ in
   };
 
   config = mkIf cfg.enable {
+    catppuccin.opencode.enable = true;
+
     programs = {
       ripgrep.enable = true; # dependency
       opencode = {

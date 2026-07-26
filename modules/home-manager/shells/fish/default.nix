@@ -3,6 +3,8 @@
     ./abbr.nix
   ];
 
+  catppuccin.fish.enable = true;
+
   programs.fish = {
     enable = true;
 

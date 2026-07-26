@@ -1,6 +1,7 @@
 { pkgs, lib, ... }: {
   imports = [
     ./ai
+    ./catppuccin
     ./editors
     ./firefox
     ./git
@@ -36,6 +37,12 @@
       # unar
       zlib
     ];
+  };
+
+  catppuccin = {
+    bat.enable = true;
+    eza.enable = true;
+    fzf.enable = true;
   };
 
   programs = {

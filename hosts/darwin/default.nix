@@ -11,10 +11,6 @@
   microvm.linuxBuilder.enable = false;
 
   hm = {
-    imports = [
-      ../../modules/home-manager/catppuccin
-    ];
-
     firefox = {
       enable = true;
     };

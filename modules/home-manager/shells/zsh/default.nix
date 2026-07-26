@@ -15,6 +15,8 @@ let
   };
 in
 {
+  catppuccin.zsh-syntax-highlighting.enable = true;
+
   # see also https://github.com/Yumasi/nixos-home/blob/master/zsh.nix#L89
   home.file = {
     ".config/zsh/zsh_abbr".source = ./zsh_abbr;

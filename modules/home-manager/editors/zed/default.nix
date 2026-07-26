@@ -13,6 +13,11 @@ in
   };
 
   config = mkIf cfg.enable {
+    catppuccin.zed = {
+      enable = true;
+      icons.enable = true;
+    };
+
     programs.zed-editor = {
       enable = true;
 
