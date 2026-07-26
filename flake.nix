@@ -42,6 +42,10 @@
       url = "github:catppuccin/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    microvm = {
+      url = "github:microvm-nix/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nur = {
       url = "github:nix-community/NUR";
       inputs = {
@@ -63,7 +67,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, nixos-wsl, vscode-server, ... }:
+  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, microvm, nixos-wsl, vscode-server, ... }:
     let
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -133,11 +137,26 @@
     {
       darwinConfigurations = {
         # drachenflieger = mkDarwinConfig { host = "drachenflieger"; system = "x86_64-darwin"; };
+
         damascus = mkDarwinConfig { host = "damascus"; };
         MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; profile = "work"; };
       };
 
       nixosConfigurations = {
+        # LLM/agent sandbox micro VM, built for aarch64-linux and run on
+        # Apple Silicon macOS via vfkit. Build/run through `microvm-run` on a
+        # configured darwin host.
+        agent-sandbox = nixpkgs.lib.nixosSystem {
+          system = "aarch64-linux";
+          specialArgs = { inherit self inputs; };
+          modules = [
+            microvm.nixosModules.microvm
+            home-manager.nixosModules.home-manager
+            ./modules/microvm/vm.nix
+            { microvm.vmHostPackages = nixpkgs.legacyPackages.aarch64-darwin; }
+          ];
+        };
+
         mothership = mkNixosConfig {
           host = "mothership";
           extraModules = [
