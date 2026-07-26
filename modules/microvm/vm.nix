@@ -185,6 +185,10 @@
   # real hosts) isn't imported by the VM, and the shared git module forces SSH
   # commit signing with a key that doesn't exist in the VM. Set an identity and
   # disable signing so the agent can commit; re-sign on the host when merging.
+  #
+  # TODO: name/email are duplicated from profiles/default.nix. Importing
+  # ./profiles here conflicts (personal/default.nix sets user.name = "ant" vs
+  # the VM's root). Extract the identity to a shared module both can import.
   hm.programs.git.settings = {
     user = {
       email = "32233059+AnthonyEnr1quez@users.noreply.github.com";
