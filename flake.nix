@@ -138,15 +138,8 @@
       darwinConfigurations = {
         # drachenflieger = mkDarwinConfig { host = "drachenflieger"; system = "x86_64-darwin"; };
 
-        damascus = mkDarwinConfig {
-          host = "damascus";
-          extraModules = [ ./modules/microvm/darwin.nix ];
-        };
-        MacBook-Pro-2 = mkDarwinConfig {
-          host = "MacBook-Pro-2";
-          profile = "work";
-          extraModules = [ ./modules/microvm/darwin.nix ];
-        };
+        damascus = mkDarwinConfig { host = "damascus"; };
+        MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; profile = "work"; };
       };
 
       nixosConfigurations = {
