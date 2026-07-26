@@ -67,7 +67,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, catppuccin, microvm, nixos-wsl, vscode-server, ... }:
+  outputs = inputs@{ self, nixpkgs, nix-vscode-extensions, flake-utils, home-manager, nur, darwin, microvm, nixos-wsl, vscode-server, ... }:
     let
       # generate a base darwin configuration with the
       # specified hostname, overlays, and any extraModules applied
@@ -86,7 +86,6 @@
                     nix-vscode-extensions.overlays.default
                   ];
                   home-manager.sharedModules = [
-                    catppuccin.homeModules.catppuccin
                     nur.modules.homeManager.default
                   ];
                 }

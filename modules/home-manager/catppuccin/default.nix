@@ -1,10 +1,15 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, inputs, ... }:
 let
   cfg = config.theming.catppuccin;
 
   inherit (lib) mkIf mkEnableOption mkOption types;
 in
 {
+  # Pull in the upstream catppuccin/nix home module so this module is
+  # self-contained and works on every platform (darwin + nixos/WSL) rather
+  # than relying on per-platform home-manager.sharedModules wiring.
+  imports = [ inputs.catppuccin.homeModules.catppuccin ];
+
   options.theming.catppuccin = {
     enable = mkEnableOption "Catppuccin theming" // { default = true; };
 
