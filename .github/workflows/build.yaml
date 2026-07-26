@@ -46,6 +46,9 @@ jobs:
 
       - run: nix build --accept-flake-config .#nixosConfigurations.agent-sandbox.config.system.build.toplevel $VERBOSE_FLAGS
 
+      # Extra aarch64-linux closure the darwin vfkit runner needs.
+      - run: nix build --accept-flake-config .#packages.aarch64-linux.agent-sandbox-runner-deps $VERBOSE_FLAGS
+
   arm-macos:
     runs-on: macos-26
     env:

@@ -177,5 +177,18 @@
         devShells = import ./shells { inherit pkgs; };
         formatter = pkgs.nixpkgs-fmt;
       }
-    );
+    )
+    //
+    {
+      # The aarch64-darwin vfkit runner (declaredRunner) pulls in one extra
+      # aarch64-linux path — the guest's closureInfo (regInfo) — that is NOT in
+      # `system.build.toplevel`. CI builds this on the arm-linux runner so it
+      # lands in cachix; otherwise the arm-macos job can't substitute it and has
+      # no Linux builder, so building declaredRunner there fails.
+      packages.aarch64-linux.agent-sandbox-runner-deps =
+        let
+          cfg = self.nixosConfigurations.agent-sandbox;
+        in
+        cfg.pkgs.closureInfo { rootPaths = [ cfg.config.system.build.toplevel ]; };
+    };
 }
