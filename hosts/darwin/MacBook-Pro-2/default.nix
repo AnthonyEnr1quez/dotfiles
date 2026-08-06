@@ -3,10 +3,10 @@ let
   mfPath = "${config.user.home}/Projects/moov/mf";
 
   goland = pkgs.jetbrains.goland.overrideAttrs (_: rec {
-    version = "2026.2";
+    version = "2026.2.0.1";
     src = pkgs.fetchurl {
       url = "https://download.jetbrains.com/go/goland-${version}-aarch64.dmg";
-      hash = "sha256-XYBXWm6xeEGE5yKgzVHvzcgPBcLpJf+UTPZSmcImOYI=";
+      hash = "sha256-zrQAsOOR4OhAXnebwnRk3da4h4Gi0t8f+SIaEAiwM0Q=";
       # hash = lib.fakeHash;
     };
   });
