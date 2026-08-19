@@ -31,6 +31,10 @@ in
           url = "https://mcp.notion.com/mcp";
           disabled = true;
         };
+        postman = {
+          url = "https://mcp.postman.com/mcp";
+          disabled = true;
+        };
         readable = {
           url = "https://readable.page/mcp";
           disabled = true;
