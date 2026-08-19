@@ -16,11 +16,11 @@
   programs = {
     go = {
       enable = true;
-      package = pkgs.go_1_26.overrideAttrs (_: rec {
-        version = "1.26.5";
+      package = pkgs.go_1_27.overrideAttrs (_: rec {
+        version = "1.27.0";
         src = pkgs.fetchurl {
           url = "https://go.dev/dl/go${version}.src.tar.gz";
-          hash = "sha256-SVvkvIcXasVnOS5bQRar2YRm0z17SdQedkzMaXay3EI=";
+          hash = "sha256-cAJAPXzERSnvbSb2mkSBgmM5Xq18FsBaWAiuBH6+sOU=";
         };
       });
       env.GOPATH = "${config.home.homeDirectory}/go";
