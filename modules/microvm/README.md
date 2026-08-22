@@ -83,6 +83,15 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
 
 - `~/.local/share/microvm/nix-store-overlay.img` — the VM's writable Nix store
   overlay (persists across runs).
+- `~/.local/share/microvm/agent-state.img` — persistent agent state. The VM
+  is otherwise stateless (tmpfs root; config comes from the Nix closure), but
+  opencode sessions/history (`~/.local/share/opencode`) and herdr session
+  state (`~/.config/herdr`) are symlinked onto this volume so they survive
+  `poweroff`.
+
+Note: opencode's `auth.json` (API credentials) lives in that persisted state
+— same protection class as the host's own `~/.local/share/opencode`, but be
+aware the "no secrets in the VM" property now excludes the agent's own login.
 
 ## Shares
 

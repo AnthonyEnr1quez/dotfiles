@@ -37,6 +37,14 @@
         mountPoint = "/nix/.rw-store";
         size = 40960; # 40 GiB
       }
+      # Persistent agent state (opencode + herdr sessions), symlinked out of
+      # the tmpfs /root via the tmpfiles rules below. Sparse image: the size
+      # is a cap, not an allocation.
+      {
+        image = "agent-state.img";
+        mountPoint = "/var/lib/agent-state";
+        size = 10240; # 10 GiB
+      }
     ];
 
     shares = [
@@ -94,9 +102,29 @@
 
   networking.interfaces.eth0.useDHCP = true;
 
-  systemd.tmpfiles.rules = [
-    "d /nix/.rw-store/nix-build 0755 root root -"
-  ];
+  # Persist agent state on the agent-state volume: create the backing dirs
+  # and symlink them into root's tmpfs home. tmpfiles runs after
+  # local-fs.target (volume mounted) and before home-manager activation,
+  # which writes its managed files (e.g. herdr's config.toml) through the
+  # symlinks.
+  #
+  # Deliberately a static list: which paths persist is a property of this VM,
+  # not of the apps' home-manager config.
+  systemd.tmpfiles.rules =
+    let
+      persist = name: target: [
+        "d /var/lib/agent-state/${name} 0700 root root -"
+        "L+ ${target} - - - - /var/lib/agent-state/${name}"
+      ];
+    in
+    [ "d /nix/.rw-store/nix-build 0755 root root -" ]
+    # opencode: sessions/history/db
+    ++ persist "opencode" "/root/.local/share/opencode"
+    # herdr: resumable session state (session.json / session-history.json)
+    # lives in its config dir. Whole dir, not per-file symlinks — atomic
+    # temp-file+rename saves would silently replace file symlinks. Its XDG
+    # state dir is just a regenerable version cache; not persisted.
+    ++ persist "herdr" "/root/.config/herdr";
 
   # Big gotcha workaround: the VM's root FS is a tmpfs (RAM), and Nix's build
   # sandbox is created on the root FS by default. Disable the sandbox and point
