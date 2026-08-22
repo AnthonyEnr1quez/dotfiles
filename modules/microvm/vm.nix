@@ -21,8 +21,8 @@
 
     # Disable the vfkit control socket. With a socket, microvm.nix wraps the
     # vfkit invocation in `bash -c '...'`, which causes the runtime-injected
-    # `extraArgsScript` args (our projects/worktrees shares) to be passed to the
-    # wrapper shell instead of vfkit — so the shares silently never attach.
+    # `extraArgsScript` args (our projects share) to be passed to the
+    # wrapper shell instead of vfkit — so the share silently never attaches.
     # We exit the VM with `poweroff` rather than the socket-based shutdown, so
     # dropping the socket costs us nothing.
     socket = null;
@@ -47,25 +47,23 @@
         source = "/nix/store";
         mountPoint = "/nix/.ro-store";
       }
-      # NOTE: the projects (ro) and worktrees (rw) shares are NOT declared here.
-      # Their host paths are per-user ($HOME differs across Macs), so baking a
-      # source into the closure would hardcode a username. Instead they're
-      # injected at launch via extraArgsScript below (which resolves $HOME at
-      # runtime), and mounted guest-side via fileSystems by their mount tags.
+      # NOTE: the projects (rw) share is NOT declared here. Its host path is
+      # per-user ($HOME differs across Macs), so baking a source into the
+      # closure would hardcode a username. Instead it's injected at launch via
+      # extraArgsScript below (which resolves $HOME at runtime), and mounted
+      # guest-side via fileSystems by its mount tag.
     ];
 
-    # Runtime-resolved virtiofs shares. This script runs on the host at launch
+    # Runtime-resolved virtiofs share. This script runs on the host at launch
     # (as the invoking user), so $HOME is the real per-user home. Its stdout is
     # appended to the vfkit command line.
-    #   - projects (ro):   host ~/projects            -> guest /root/projects
-    #   - worktrees (rw):  host ~/.local/share/microvm/worktrees -> /root/worktrees
+    #   - projects (rw): host ~/projects -> guest /root/projects
     # Built with vmHostPackages because this script runs on the macOS HOST at
     # launch (not in the guest), so it needs a host-executable (aarch64-darwin)
     # shell.
     extraArgsScript = "${config.microvm.vmHostPackages.writeShellScript "microvm-runtime-shares" ''
       echo \
-        "--device" "virtio-fs,sharedDir=$HOME/projects,mountTag=projects" \
-        "--device" "virtio-fs,sharedDir=$HOME/.local/share/microvm/worktrees,mountTag=worktrees"
+        "--device" "virtio-fs,sharedDir=$HOME/projects,mountTag=projects"
     ''}";
 
     interfaces = [
@@ -77,22 +75,18 @@
     ];
   };
 
-  # Guest mounts for the runtime-injected virtiofs shares (by mount tag).
-  # projects is read-only; worktrees is read-write.
+  # Guest mount for the runtime-injected virtiofs share (by mount tag).
+  # Read-write by design: agents work directly in the real repos. Git is the
+  # undo layer; the VM is the execution jail. See README.md for the trust
+  # model.
   #
-  # `nofail` is important: these shares are injected at launch via
-  # extraArgsScript, not baked into the closure. If they're ever missing (e.g.
+  # `nofail` is important: this share is injected at launch via
+  # extraArgsScript, not baked into the closure. If it's ever missing (e.g.
   # the CI-built closure run without the wrapper), the VM must still boot rather
-  # than drop to emergency mode. Also mark them not-needed-for-boot so they
-  # don't block local-fs.target.
+  # than drop to emergency mode. Also mark it not-needed-for-boot so it
+  # doesn't block local-fs.target.
   fileSystems."/root/projects" = {
     device = "projects";
-    fsType = "virtiofs";
-    options = [ "ro" "nofail" "x-systemd.after=systemd-modules-load.service" ];
-    neededForBoot = false;
-  };
-  fileSystems."/root/worktrees" = {
-    device = "worktrees";
     fsType = "virtiofs";
     options = [ "nofail" "x-systemd.after=systemd-modules-load.service" ];
     neededForBoot = false;
@@ -117,54 +111,6 @@
   environment.systemPackages = with pkgs; [
     gnumake
     gcc
-
-    # new-worktree <repo> [session] [base-branch]
-    #   Creates an isolated, self-contained clone of a read-only host repo
-    #   (~/projects/<repo>) under ~/worktrees/<repo>/<session>, checked out on a
-    #   fresh `agent/<session>` branch based on <base-branch>. The agent works
-    #   there; `microvm-fetch` on the host pulls the results back.
-    (writeShellApplication {
-      name = "new-worktree";
-      runtimeInputs = [ git coreutils ];
-      text = ''
-        repo="''${1:-}"
-        session="''${2:-$(date +%Y%m%d-%H%M%S)}"
-        base="''${3:-}"
-
-        if [ -z "$repo" ]; then
-          echo "usage: new-worktree <repo> [session] [base-branch]" >&2
-          echo "  <repo>        path under ~/projects (e.g. nix/dotfiles)" >&2
-          exit 2
-        fi
-
-        src="$HOME/projects/$repo"
-        dest="$HOME/worktrees/$repo/$session"
-
-        if [ ! -d "$src/.git" ] && [ ! -f "$src/.git" ]; then
-          echo "error: '$src' is not a git repo (is ~/projects/$repo shared?)" >&2
-          exit 1
-        fi
-        if [ -e "$dest" ]; then
-          echo "error: session already exists: $dest" >&2
-          echo "       pick a different session name or remove it first." >&2
-          exit 1
-        fi
-
-        mkdir -p "$(dirname "$dest")"
-        # Self-contained clone (no shared objects) so it survives the source
-        # repo being modified/gc'd on the host.
-        git clone --no-hardlinks "$src" "$dest"
-
-        cd "$dest"
-        if [ -n "$base" ]; then
-          git checkout "$base"
-        fi
-        git switch -c "agent/$session"
-
-        echo "worktree ready: $dest (branch agent/$session)" >&2
-        echo "$dest"
-      '';
-    })
   ];
 
   # Treat the VM like another machine: reuse the shared system config
@@ -184,7 +130,8 @@
   # Git identity for the sandbox. The `profiles/` module (which sets these on
   # real hosts) isn't imported by the VM, and the shared git module forces SSH
   # commit signing with a key that doesn't exist in the VM. Set an identity and
-  # disable signing so the agent can commit; re-sign on the host when merging.
+  # disable signing so the agent can commit; re-sign on the host if signed
+  # history is needed.
   #
   # TODO: name/email are duplicated from profiles/default.nix. Importing
   # ./profiles here conflicts (personal/default.nix sets user.name = "ant" vs

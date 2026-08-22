@@ -8,20 +8,60 @@ Based on <https://abhinavsarkar.net/notes/2026-microvm-nix/>.
 
 ## Why
 
-The agent runs **inside** the VM. Everything it does — reading files, running
-builds/tests, executing arbitrary commands — is caged. It cannot touch the host
-filesystem beyond the directories explicitly shared in, and networking is
-NAT-only (outbound only; the host cannot connect into the VM).
+The agent runs **inside** the VM. Everything it *executes* — builds, tests,
+arbitrary commands, dependency code — is caged. It cannot reach secrets
+(`~/.ssh`, tokens, keychains), the rest of the host filesystem, or the system;
+networking is NAT-only (outbound only; the host cannot connect into the VM).
+
+This closes the enforcement gap of agent-level permission configs: those gate
+what the agent *asks* to do, but anything it legitimately shells out to (a
+`make` target, an `npm test`) runs unrestricted. In the VM, that execution is
+structurally confined.
+
+## Trust model
+
+Think of the VM as a **second computer with your projects directory plugged
+in**:
+
+- `~/projects` is shared **read-write**. Agents work directly in your real
+  repos — the same working copy you have open in your editor. You watch and
+  edit alongside the agent, exactly as with a host-side agent session.
+- **Git is the undo layer, the VM is the execution jail.** The sandbox does
+  not protect your repos from the agent — it protects everything *else* from
+  whatever the agent runs. Repo safety comes from git (commit/push before
+  sessions, reflog, remotes) and from you watching the session.
+
+A read-only share would be cosmetic anyway: vfkit's virtio-fs has no
+host-side read-only flag, so `ro` could only be a guest mount option, which
+guest root (the agent) can remount rw. Mounting rw states the real trust
+model instead of implying a boundary that doesn't exist.
+
+### Consequences worth knowing
+
+- **Commit or stash before letting an agent loose.** Uncommitted work in a
+  repo the agent touches is destructible; committed work is always
+  recoverable via reflog.
+- **`.git` dirs are agent-writable**, including hooks and config
+  (`core.hooksPath`, `core.fsmonitor`), which execute host-side when *you*
+  run git in that repo. After an unattended/suspect session, glance at
+  `.git/config` and hooks, or run
+  `git -c core.hooksPath=/dev/null -c core.fsmonitor= <cmd>`.
+- **Blast radius is all of `~/projects`**, not just the repo being worked on
+  — including this dotfiles repo. Review diffs before a `darwin-rebuild` that
+  follows an agent session.
+- **The host Nix store is visible read-only** in the VM (shared as the
+  overlay's lower layer): an agent can read everything in your `/nix/store`.
+  Store writes are blocked host-side by POSIX perms (root-owned), unlike
+  `~/projects` which your user owns.
 
 ## Files
 
-- `vm.nix` — the guest NixOS config (vfkit, resources, shares, tooling). Reuses
-  `modules/common.nix`, so the VM has the same home-manager tooling as a normal
-  host (git, go, fish, direnv, opencode, ...) applied to the autologin `root`
-  user.
-- `darwin.nix` — host-side wiring: the `microvm-run` launcher, the opt-in
-  `linux-builder`, and the host helpers (`microvm-fetch`, `microvm-open`,
-  `microvm-review`).
+- `vm.nix` — the guest NixOS config (vfkit, resources, shares, tooling).
+  Reuses `modules/common.nix`, so the VM has the same home-manager tooling as
+  a normal host (git, go, fish, direnv, opencode, ...) applied to the
+  autologin `root` user.
+- `darwin.nix` — host-side wiring: the `microvm-run` launcher and the opt-in
+  `linux-builder`.
 - Wired into all darwin hosts via `hosts/darwin/default.nix`.
 
 ## Building & running
@@ -35,119 +75,35 @@ microvm-run          # builds/substitutes the VM, then boots it via vfkit
 
 Exit the VM with `poweroff` at its shell prompt.
 
-To (re)build the VM locally (e.g. while iterating on `vm.nix`), temporarily flip
-`microvm.linuxBuilder.enable = true` in `hosts/darwin/default.nix`, rebuild +
-switch, run, then flip it back to free the builder VM's resources.
+To (re)build the VM locally (e.g. while iterating on `vm.nix`), temporarily
+flip `microvm.linuxBuilder.enable = true` in `hosts/darwin/default.nix`,
+rebuild + switch, run, then flip it back to free the builder VM's resources.
 
 State locations on the host (per-user, resolved at launch via `$HOME`):
 
 - `~/.local/share/microvm/nix-store-overlay.img` — the VM's writable Nix store
   overlay (persists across runs).
-- `~/.local/share/microvm/worktrees/` — the writable worktrees area (see below).
 
 ## Shares
 
-Two host directories are shared into the VM. Their host paths are per-user, so
-they are injected at launch (resolving `$HOME`) rather than baked into the
-closure; the guest mounts them by tag.
+| Host          | VM (guest)       | Mode | Notes                               |
+| ------------- | ---------------- | ---- | ----------------------------------- |
+| `~/projects`  | `/root/projects` | rw   | injected at launch (per-user $HOME) |
+| `/nix/store`  | `/nix/.ro-store` | ro   | lower layer of the store overlay    |
 
-| Host                                    | VM (guest)        | Mode |
-| --------------------------------------- | ----------------- | ---- |
-| `~/projects`                            | `/root/projects`  | ro   |
-| `~/.local/share/microvm/worktrees`      | `/root/worktrees` | rw   |
+The projects share's host path is per-user, so it is injected at launch
+(resolving `$HOME`) via `extraArgsScript` rather than baked into the closure;
+the guest mounts it by tag with `nofail` so a CI-built closure still boots
+without it.
 
-`~/projects` is **read-only** in the VM: an agent can read your repos but cannot
-modify them.
+## Workflow
 
-## Worktree workflow
+There isn't one — that's the point. Boot the VM, `cd ~/projects/<repo>`, start
+an agent session (one session per repo). On the host, keep the same directory
+open in your editor: you see edits live, you intervene and edit alongside the
+agent, and finished work is already in your repo on whatever branch the agent
+used. Commit, branch, and push with your normal git habits (pushes happen
+host-side — the VM deliberately has no credentials).
 
-Because `~/projects` is read-only, the agent cannot create a git worktree
-directly off your repos (worktrees must write into the main repo's `.git`).
-Instead it works in a **self-contained clone** in the writable worktrees area,
-and results are pulled back to the host explicitly.
-
-### 1. In the VM — start a session
-
-```sh
-new-worktree <repo> [session] [base-branch]
-```
-
-- `<repo>` — path under `~/projects` (e.g. `nix/dotfiles`)
-- `[session]` — session name (defaults to a timestamp)
-- `[base-branch]` — branch to base the work on (defaults to the repo's default)
-
-This makes a `git clone --no-hardlinks ~/projects/<repo>` at
-`~/worktrees/<repo>/<session>` (self-contained, so it survives the source repo
-being modified/gc'd on the host), checks out `<base-branch>`, and creates a
-fresh `agent/<session>` branch. The agent works there and commits onto
-`agent/<session>`.
-
-```sh
-new-worktree nix/dotfiles fix-thing develop
-cd ~/worktrees/nix/dotfiles/fix-thing
-# ... agent edits and commits on branch agent/fix-thing ...
-```
-
-### 2. On the host — watch live
-
-The session directory is shared live, so you can open it in Zed and watch edits
-(including uncommitted changes) in real time:
-
-```sh
-microvm-open nix/dotfiles fix-thing    # opens the session dir in Zed (zeditor)
-microvm-open nix/dotfiles              # lists sessions for the repo
-```
-
-### 3. On the host — pull results into your real repo
-
-`git fetch` only moves committed work. To bring the agent's commits into your
-real repo:
-
-```sh
-microvm-fetch nix/dotfiles
-```
-
-This fetches every session's branches into `~/projects/<repo>` under
-`refs/agent/<session>/*` — namespaced so nothing collides with your own
-branches and no remotes are left behind.
-
-### 4. On the host — review the fetched work
-
-The fetched refs live under `refs/agent/*`, which aren't normal branches, so
-`git switch` won't find them directly. Use `microvm-review` to check a session
-out in a host git worktree:
-
-```sh
-microvm-review <repo> <session> [branch]
-```
-
-- Defaults `[branch]` to the session's `agent/<session>` branch.
-- Creates a review worktree at `~/projects/<repo>-review/<session>`, checked out
-  at the agent's ref — ready to open in Zed and merge natively.
-
-```sh
-microvm-review nix/dotfiles fix-thing
-```
-
-Or do it manually:
-
-```sh
-git for-each-ref refs/agent                                  # list agent refs
-git switch -c review-fix-thing refs/agent/fix-thing/agent/fix-thing
-# or:
-git worktree add ../review refs/agent/fix-thing/agent/fix-thing
-```
-
-## Notes / caveats
-
-- **Isolation vs. native worktrees.** Because the agent runs in the VM and
-  `~/projects` is read-only, its work cannot be a *native* git worktree of your
-  host repo (that would require host-repo write access, breaking the sandbox).
-  You review via the live shared dir + `microvm-fetch` instead of Zed's native
-  worktree switcher.
-- **Read-only enforcement** for `~/projects` is guest-side (the `ro` mount).
-  It's sufficient for sandboxing your own agents, but is not a hard boundary
-  against a kernel-level guest exploit.
-- **The host Nix store is visible read-only** in the VM (shared as the overlay's
-  lower layer), so an agent can read — but not modify — everything in your
-  `/nix/store`.
+The VM's git identity can commit but cannot sign (no keys in the VM); re-sign
+on the host if you need signed history.
