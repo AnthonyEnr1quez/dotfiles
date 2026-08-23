@@ -194,6 +194,7 @@ in
     enable = true;
     sandboxed = true;
   };
+  hm.mcp.enable = true;
 
   # Git identity for the sandbox. The `profiles/` module (which sets these on
   # real hosts) isn't imported by the VM, and the shared git module forces SSH

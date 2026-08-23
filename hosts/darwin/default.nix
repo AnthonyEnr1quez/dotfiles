@@ -25,6 +25,7 @@
     opencode = {
       enable = true;
     };
+    mcp.enable = true;
 
     vscode = {
       enable = true;
