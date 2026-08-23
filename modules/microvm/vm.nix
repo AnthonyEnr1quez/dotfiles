@@ -153,7 +153,6 @@ in
   environment.systemPackages = with pkgs; [
     gnumake
     gcc
-    # docker-compose # `docker compose` CLI plugin
   ];
 
   # Rootful Docker for the agent (root is the VM's only user, so there's no
