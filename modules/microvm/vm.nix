@@ -153,7 +153,16 @@ in
   environment.systemPackages = with pkgs; [
     gnumake
     gcc
+    # docker-compose # `docker compose` CLI plugin
   ];
+
+  # Rootful Docker for the agent (root is the VM's only user, so there's no
+  # privilege-separation benefit to rootless). /var/lib/docker lives on the
+  # tmpfs root like the rest of the VM: images/containers are ephemeral and
+  # count against the VM's RAM budget, matching the VM's disposable,
+  # stateless-by-default design (see agent-state persistence above for the
+  # exception).
+  virtualisation.docker.enable = true;
 
   # Search our collision-free terminfo first; keep the system path as
   # fallback for entries in dirs the case hack didn't touch (e.g. v/vt220,
