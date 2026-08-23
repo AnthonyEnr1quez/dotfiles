@@ -13,8 +13,8 @@ let
   go-modern-guidelines = pkgs.fetchFromGitHub {
     owner = "JetBrains";
     repo = "go-modern-guidelines";
-    rev = "ec8afd4d7961e260648345b28638f50e3a86ec1c"; # main
-    sha256 = "18c20i1hzfkv6fb2cg6sdb34x5290pkxn7j39h4bbqjjdv6s1vb9";
+    rev = "40781f167719913666fe2a7dc1c77ea6f256df0a"; # main
+    sha256 = "01m7dxdvci1r8r59pm0jww953d3kabkflhz8kc3ynns8p580w7a9";
   };
 
   stop-slop = pkgs.fetchFromGitHub {
