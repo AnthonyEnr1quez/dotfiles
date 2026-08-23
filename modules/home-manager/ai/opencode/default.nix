@@ -46,7 +46,8 @@ in
           cloud-run-basics = "${google-skills}/skills/cloud/cloud-run-basics";
           gke-basics = "${google-skills}/skills/cloud/gke-basics";
           stop-slop = "${stop-slop}";
-          use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
+          # TODO, this is now a weird cli and not a raw skill file based repo
+          # use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
         };
 
         tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
