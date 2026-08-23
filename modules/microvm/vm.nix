@@ -175,7 +175,17 @@ in
 
   # GUI/desktop home-manager modules are opt-in (default off); enable just the
   # opencode agent so an agent can run fully inside the sandbox.
-  hm.opencode.enable = true;
+  #
+  # sandboxed = true relaxes bash/skill/external-directory "ask" prompts that
+  # only guard against unrestrained *host* execution, since that execution is
+  # already jailed by the VM. Rules protecting live repo state (git, rm) and
+  # secrets (read denies) are left untouched: ~/projects is a real, writable
+  # mount of the host repos, so those risks aren't mitigated by the VM
+  # boundary. See modules/home-manager/ai/opencode/default.nix.
+  hm.opencode = {
+    enable = true;
+    sandboxed = true;
+  };
 
   # Git identity for the sandbox. The `profiles/` module (which sets these on
   # real hosts) isn't imported by the VM, and the shared git module forces SSH

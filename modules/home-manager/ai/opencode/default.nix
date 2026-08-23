@@ -25,10 +25,21 @@ let
   };
 
   inherit (lib) mkIf mkEnableOption;
+
+  # Flip an otherwise-"ask" bash/skill/external-directory rule to "allow"
+  # when opencode.sandboxed is set (see options.opencode.sandboxed above).
+  sb = v: if config.opencode.sandboxed then "allow" else v;
 in
 {
   options.${name} = {
     enable = mkEnableOption name;
+    sandboxed = mkEnableOption ''
+      assume opencode is running inside an isolated execution environment
+      (e.g. the agent-sandbox microVM), and relax bash/skill/external-directory
+      permission prompts that only guard against unrestrained *host* execution.
+      Rules protecting live repo state (git, rm) and secrets (read denies)
+      still apply, since those risks aren't mitigated by the sandbox boundary
+    '';
   };
 
   config = mkIf cfg.enable {
@@ -174,10 +185,10 @@ in
               "grep *" = "allow";
               "egrep *" = "allow";
               "fgrep *" = "allow";
-              "mkdir" = "ask";
-              "mkdir *" = "ask";
-              "touch" = "ask";
-              "touch *" = "ask";
+              "mkdir" = sb "ask";
+              "mkdir *" = sb "ask";
+              "touch" = sb "ask";
+              "touch *" = sb "ask";
               "whoami" = "allow";
               "hostname" = "allow";
               "hostname *" = "allow";
@@ -315,22 +326,22 @@ in
               "luacheck *" = "allow";
 
               # Shell - ask: file modification or redirection risk
-              "xdg-open *" = "ask";
-              "sed" = "ask";
-              "sed *" = "ask";
-              "sd *" = "ask";
-              "mv *" = "ask";
-              "cp *" = "ask";
-              "tee *" = "ask";
-              "echo *" = "ask";
-              "printf *" = "ask";
-              "curl *" = "ask";
-              "wget *" = "ask";
-              "chmod *" = "ask";
-              "chown *" = "ask";
-              "kill *" = "ask";
-              "pkill *" = "ask";
-              "ln *" = "ask";
+              "xdg-open *" = sb "ask";
+              "sed" = sb "ask";
+              "sed *" = sb "ask";
+              "sd *" = sb "ask";
+              "mv *" = sb "ask";
+              "cp *" = sb "ask";
+              "tee *" = sb "ask";
+              "echo *" = sb "ask";
+              "printf *" = sb "ask";
+              "curl *" = sb "ask";
+              "wget *" = sb "ask";
+              "chmod *" = sb "ask";
+              "chown *" = sb "ask";
+              "kill *" = sb "ask";
+              "pkill *" = sb "ask";
+              "ln *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # Systemd - deny power management first
@@ -384,18 +395,18 @@ in
               "coredumpctl *" = "allow";
 
               # Systemd - ask: service state modifications
-              "systemctl start *" = "ask";
-              "systemctl stop *" = "ask";
-              "systemctl restart *" = "ask";
-              "systemctl reload *" = "ask";
-              "systemctl enable *" = "ask";
-              "systemctl disable *" = "ask";
-              "systemctl mask *" = "ask";
-              "systemctl unmask *" = "ask";
-              "systemctl daemon-reload" = "ask";
-              "systemctl daemon-reexec" = "ask";
-              "systemctl edit *" = "ask";
-              "systemctl set-property *" = "ask";
+              "systemctl start *" = sb "ask";
+              "systemctl stop *" = sb "ask";
+              "systemctl restart *" = sb "ask";
+              "systemctl reload *" = sb "ask";
+              "systemctl enable *" = sb "ask";
+              "systemctl disable *" = sb "ask";
+              "systemctl mask *" = sb "ask";
+              "systemctl unmask *" = sb "ask";
+              "systemctl daemon-reload" = sb "ask";
+              "systemctl daemon-reexec" = sb "ask";
+              "systemctl edit *" = sb "ask";
+              "systemctl set-property *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # Docker - deny mass destruction first
@@ -439,25 +450,25 @@ in
               "docker compose config*" = "allow";
 
               # Docker - ask: container operations
-              "docker build *" = "ask";
-              "docker run *" = "ask";
-              "docker exec *" = "ask";
-              "docker stop *" = "ask";
-              "docker start *" = "ask";
-              "docker restart *" = "ask";
-              "docker kill *" = "ask";
-              "docker pause *" = "ask";
-              "docker unpause *" = "ask";
-              "docker pull *" = "ask";
-              "docker push *" = "ask";
-              "docker tag *" = "ask";
-              "docker create *" = "ask";
-              "docker commit *" = "ask";
-              "docker cp *" = "ask";
-              "docker-compose up*" = "ask";
-              "docker-compose down*" = "ask";
-              "docker compose up*" = "ask";
-              "docker compose down*" = "ask";
+              "docker build *" = sb "ask";
+              "docker run *" = sb "ask";
+              "docker exec *" = sb "ask";
+              "docker stop *" = sb "ask";
+              "docker start *" = sb "ask";
+              "docker restart *" = sb "ask";
+              "docker kill *" = sb "ask";
+              "docker pause *" = sb "ask";
+              "docker unpause *" = sb "ask";
+              "docker pull *" = sb "ask";
+              "docker push *" = "ask"; # affects remote registry state - always ask
+              "docker tag *" = "ask"; # often precedes a push - always ask
+              "docker create *" = sb "ask";
+              "docker commit *" = sb "ask";
+              "docker cp *" = sb "ask";
+              "docker-compose up*" = sb "ask";
+              "docker-compose down*" = sb "ask";
+              "docker compose up*" = sb "ask";
+              "docker compose down*" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # Build tools - version checks and read-only inspection
@@ -491,25 +502,25 @@ in
               "readelf *" = "allow";
 
               # Build tools - ask: configuration and builds
-              "./configure*" = "ask";
-              "configure *" = "ask";
-              "autoreconf*" = "ask";
-              "autoconf *" = "ask";
-              "automake *" = "ask";
-              "make" = "ask";
-              "make *" = "ask";
-              "cmake *" = "ask";
-              "meson *" = "ask";
-              "ninja" = "ask";
-              "ninja *" = "ask";
-              "clang *" = "ask";
-              "clang++ *" = "ask";
-              "gcc *" = "ask";
-              "g++ *" = "ask";
-              "ar *" = "ask";
-              "ranlib *" = "ask";
-              "clang-tidy *" = "ask";
-              "clang-format *" = "ask";
+              "./configure*" = sb "ask";
+              "configure *" = sb "ask";
+              "autoreconf*" = sb "ask";
+              "autoconf *" = sb "ask";
+              "automake *" = sb "ask";
+              "make" = sb "ask";
+              "make *" = sb "ask";
+              "cmake *" = sb "ask";
+              "meson *" = sb "ask";
+              "ninja" = sb "ask";
+              "ninja *" = sb "ask";
+              "clang *" = sb "ask";
+              "clang++ *" = sb "ask";
+              "gcc *" = sb "ask";
+              "g++ *" = sb "ask";
+              "ar *" = sb "ask";
+              "ranlib *" = sb "ask";
+              "clang-tidy *" = sb "ask";
+              "clang-format *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # GitHub CLI - deny destructive first
@@ -714,20 +725,20 @@ in
               "alejandra *" = "allow";
 
               # Nix - ask: builds and environment changes
-              "nix build*" = "ask";
-              "nix develop*" = "ask";
-              "nix run *" = "ask";
-              "nix shell *" = "ask";
-              "nix flake update*" = "ask";
-              "nix flake lock*" = "ask";
-              "nix profile *" = "ask";
-              "nix-shell" = "ask";
-              "nix-shell *" = "ask";
-              "nix-build *" = "ask";
-              "nix-env *" = "ask";
-              "home-manager *" = "ask";
-              "nixos-rebuild *" = "ask";
-              "darwin-rebuild *" = "ask";
+              "nix build*" = sb "ask";
+              "nix develop*" = sb "ask";
+              "nix run *" = sb "ask";
+              "nix shell *" = sb "ask";
+              "nix flake update*" = sb "ask";
+              "nix flake lock*" = sb "ask";
+              "nix profile *" = sb "ask";
+              "nix-shell" = sb "ask";
+              "nix-shell *" = sb "ask";
+              "nix-build *" = sb "ask";
+              "nix-env *" = sb "ask";
+              "home-manager *" = sb "ask";
+              "nixos-rebuild *" = sb "ask";
+              "darwin-rebuild *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # Go
@@ -748,17 +759,17 @@ in
               "go help *" = "allow";
               "go test*" = "allow";
 
-              "go build*" = "ask";
-              "go run *" = "ask";
-              "go generate*" = "ask";
-              "go get *" = "ask";
-              "go install *" = "ask";
-              "go mod tidy*" = "ask";
-              "go mod init*" = "ask";
-              "go mod edit*" = "ask";
-              "go work *" = "ask";
-              "go fmt *" = "ask";
-              "gofmt *" = "ask";
+              "go build*" = sb "ask";
+              "go run *" = sb "ask";
+              "go generate*" = sb "ask";
+              "go get *" = sb "ask";
+              "go install *" = sb "ask";
+              "go mod tidy*" = sb "ask";
+              "go mod init*" = sb "ask";
+              "go mod edit*" = sb "ask";
+              "go work *" = sb "ask";
+              "go fmt *" = sb "ask";
+              "gofmt *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # JavaScript/TypeScript - deny cache corruption first
@@ -809,38 +820,38 @@ in
               "tsc --noEmit*" = "allow";
 
               # JavaScript/TypeScript - ask: installs and execution
-              "npm install*" = "ask";
-              "npm i" = "ask";
-              "npm i *" = "ask";
-              "npm ci*" = "ask";
-              "npm run *" = "ask";
-              "npm test*" = "ask";
-              "npm start*" = "ask";
-              "npm exec *" = "ask";
-              "npm publish*" = "ask";
-              "npm uninstall*" = "ask";
-              "npm update*" = "ask";
-              "npm link*" = "ask";
-              "npx *" = "ask";
+              "npm install*" = sb "ask";
+              "npm i" = sb "ask";
+              "npm i *" = sb "ask";
+              "npm ci*" = sb "ask";
+              "npm run *" = sb "ask";
+              "npm test*" = sb "ask";
+              "npm start*" = sb "ask";
+              "npm exec *" = sb "ask";
+              "npm publish*" = "ask"; # publishes to remote registry - always ask
+              "npm uninstall*" = sb "ask";
+              "npm update*" = sb "ask";
+              "npm link*" = sb "ask";
+              "npx *" = sb "ask";
 
-              "pnpm install*" = "ask";
-              "pnpm i" = "ask";
-              "pnpm i *" = "ask";
-              "pnpm run *" = "ask";
-              "pnpm test*" = "ask";
-              "pnpm exec *" = "ask";
-              "pnpm dlx *" = "ask";
-              "pnpm add *" = "ask";
-              "pnpm remove *" = "ask";
+              "pnpm install*" = sb "ask";
+              "pnpm i" = sb "ask";
+              "pnpm i *" = sb "ask";
+              "pnpm run *" = sb "ask";
+              "pnpm test*" = sb "ask";
+              "pnpm exec *" = sb "ask";
+              "pnpm dlx *" = sb "ask";
+              "pnpm add *" = sb "ask";
+              "pnpm remove *" = sb "ask";
 
-              "yarn install*" = "ask";
-              "yarn add *" = "ask";
-              "yarn remove *" = "ask";
-              "yarn run *" = "ask";
+              "yarn install*" = sb "ask";
+              "yarn add *" = sb "ask";
+              "yarn remove *" = sb "ask";
+              "yarn run *" = sb "ask";
 
-              "tsc" = "ask";
-              "tsc *" = "ask";
-              "vite*" = "ask";
+              "tsc" = sb "ask";
+              "tsc *" = sb "ask";
+              "vite*" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # Rust
@@ -871,26 +882,26 @@ in
               "rustup component list*" = "allow";
               "rustup which *" = "allow";
 
-              "cargo build*" = "ask";
-              "cargo test*" = "ask";
-              "cargo run*" = "ask";
-              "cargo bench*" = "ask";
-              "cargo install*" = "ask";
-              "cargo uninstall*" = "ask";
-              "cargo publish*" = "ask";
-              "cargo update*" = "ask";
-              "cargo add *" = "ask";
-              "cargo remove *" = "ask";
-              "cargo init*" = "ask";
-              "cargo new *" = "ask";
-              "cargo fmt" = "ask";
-              "cargo fmt *" = "ask";
-              "cargo fix*" = "ask";
-              "cargo generate*" = "ask";
-              "rustup update*" = "ask";
-              "rustup default *" = "ask";
-              "rustup toolchain *" = "ask";
-              "rustup override *" = "ask";
+              "cargo build*" = sb "ask";
+              "cargo test*" = sb "ask";
+              "cargo run*" = sb "ask";
+              "cargo bench*" = sb "ask";
+              "cargo install*" = sb "ask";
+              "cargo uninstall*" = sb "ask";
+              "cargo publish*" = "ask"; # publishes to remote registry - always ask
+              "cargo update*" = sb "ask";
+              "cargo add *" = sb "ask";
+              "cargo remove *" = sb "ask";
+              "cargo init*" = sb "ask";
+              "cargo new *" = sb "ask";
+              "cargo fmt" = sb "ask";
+              "cargo fmt *" = sb "ask";
+              "cargo fix*" = sb "ask";
+              "cargo generate*" = sb "ask";
+              "rustup update*" = sb "ask";
+              "rustup default *" = sb "ask";
+              "rustup toolchain *" = sb "ask";
+              "rustup override *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # Python
@@ -934,33 +945,33 @@ in
               "isort --check*" = "allow";
               "isort --diff *" = "allow";
 
-              "python" = "ask";
-              "python *" = "ask";
-              "python3" = "ask";
-              "python3 *" = "ask";
-              "pip install*" = "ask";
-              "pip uninstall*" = "ask";
-              "pip download*" = "ask";
+              "python" = sb "ask";
+              "python *" = sb "ask";
+              "python3" = sb "ask";
+              "python3 *" = sb "ask";
+              "pip install*" = sb "ask";
+              "pip uninstall*" = sb "ask";
+              "pip download*" = sb "ask";
 
-              "uv pip install*" = "ask";
-              "uv pip uninstall*" = "ask";
-              "uv sync*" = "ask";
-              "uv run *" = "ask";
-              "uv venv*" = "ask";
-              "uv lock*" = "ask";
-              "uv add *" = "ask";
-              "uv remove *" = "ask";
+              "uv pip install*" = sb "ask";
+              "uv pip uninstall*" = sb "ask";
+              "uv sync*" = sb "ask";
+              "uv run *" = sb "ask";
+              "uv venv*" = sb "ask";
+              "uv lock*" = sb "ask";
+              "uv add *" = sb "ask";
+              "uv remove *" = sb "ask";
 
-              "pytest" = "ask";
-              "pytest *" = "ask";
-              "python -m pytest*" = "ask";
-              "python3 -m pytest*" = "ask";
-              "mypy" = "ask";
-              "mypy *" = "ask";
-              "ruff" = "ask";
-              "ruff *" = "ask";
-              "black *" = "ask";
-              "isort *" = "ask";
+              "pytest" = sb "ask";
+              "pytest *" = sb "ask";
+              "python -m pytest*" = sb "ask";
+              "python3 -m pytest*" = sb "ask";
+              "mypy" = sb "ask";
+              "mypy *" = sb "ask";
+              "ruff" = sb "ask";
+              "ruff *" = sb "ask";
+              "black *" = sb "ask";
+              "isort *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # CATCH-ALL: Unknown commands require approval
@@ -1033,7 +1044,7 @@ in
             task = "allow"; # Launching subagents
             skill = {
               "meet-the-agents" = "allow";
-              "*" = "ask";
+              "*" = sb "ask";
             };
             todowrite = "allow"; # Modifying todo lists
             webfetch = "allow"; # Fetching URLs
@@ -1069,7 +1080,7 @@ in
               # ══════════════════════════════════════════════════════════════
               # CATCHALL: Prompt for other external directories
               # ══════════════════════════════════════════════════════════════
-              "*" = "ask";
+              "*" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
               # DENY: Sensitive system directories (highest priority - LAST)
