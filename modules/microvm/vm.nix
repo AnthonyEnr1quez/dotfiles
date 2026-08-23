@@ -8,6 +8,20 @@
 # reach the host/internet outbound, but the host cannot initiate connections
 # into the VM.
 { lib, pkgs, config, ... }:
+let
+  # Terminfo entries the VM can actually resolve. The VM runs from the host's
+  # /nix/store, which sits on case-insensitive APFS: Nix's darwin case hack
+  # renames terminfo's case-colliding dirs (x/ collides with X/ and becomes
+  # "x~nix~case~hack~1"), so the guest can't look up TERM=xterm-256color (what
+  # herdr sets for its panes). This package contains only lowercase dirs — no
+  # collisions, so the case hack leaves it alone and the guest sees it intact.
+  vm-terminfo = pkgs.runCommand "vm-terminfo" { } ''
+    mkdir -p $out/share/terminfo/{x,t,s}
+    cp -L ${pkgs.ncurses}/share/terminfo/x/xterm* $out/share/terminfo/x/
+    cp -L ${pkgs.ncurses}/share/terminfo/t/tmux* $out/share/terminfo/t/
+    cp -L ${pkgs.ncurses}/share/terminfo/s/screen* $out/share/terminfo/s/
+  '';
+in
 {
   imports = [ ../common.nix ];
 
@@ -141,10 +155,13 @@
     gcc
   ];
 
-  # The minimal VM closure ships almost no terminfo, so TUI panes (herdr sets
-  # TERM=xterm-256color) hit "unknown terminal type" in ncurses tools like
-  # `clear`. Link the full terminfo collection.
-  environment.enableAllTerminfo = true;
+  # Search our collision-free terminfo first; keep the system path as
+  # fallback for entries in dirs the case hack didn't touch (e.g. v/vt220,
+  # the serial console's TERM).
+  environment.variables.TERMINFO_DIRS = [
+    "${vm-terminfo}/share/terminfo"
+    "/run/current-system/sw/share/terminfo"
+  ];
 
   # Treat the VM like another machine: reuse the shared system config
   # (modules/common.nix), which bootstraps home-manager and pulls in the full
