@@ -34,10 +34,18 @@ let
     mkdir -p "$statedir"
     cd "$statedir"
 
-    # Restore terminal settings on exit (vfkit puts the tty in raw mode).
-    cleanup() { stty "$(stty -g)"; }
-    trap cleanup EXIT
-    exec "$runner/bin/microvm-run"
+    # vfkit's serial console is our stdio, but the host tty still generates
+    # signals: Ctrl-C would SIGINT vfkit, whose signal handler gracefully
+    # stops the whole VM. Undefine the signal chars so ^C/^\/^Z are sent to
+    # the guest console (interrupting the process *inside* the VM) instead.
+    # Exit the VM with `poweroff` at its prompt; if the guest ever hangs,
+    # kill vfkit from another terminal.
+    #
+    # No `exec`: the EXIT trap must restore the tty after vfkit returns.
+    saved_tty="$(stty -g)"
+    trap 'stty "$saved_tty"' EXIT
+    stty intr undef quit undef susp undef
+    "$runner/bin/microvm-run"
   '';
 in
 {
