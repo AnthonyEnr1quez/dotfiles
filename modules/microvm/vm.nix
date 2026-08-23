@@ -141,6 +141,11 @@
     gcc
   ];
 
+  # The minimal VM closure ships almost no terminfo, so TUI panes (herdr sets
+  # TERM=xterm-256color) hit "unknown terminal type" in ncurses tools like
+  # `clear`. Link the full terminfo collection.
+  environment.enableAllTerminfo = true;
+
   # Treat the VM like another machine: reuse the shared system config
   # (modules/common.nix), which bootstraps home-manager and pulls in the full
   # modules/home-manager tooling barrel. The primary user here is root (the
