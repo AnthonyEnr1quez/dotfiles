@@ -153,6 +153,12 @@ in
   environment.systemPackages = with pkgs; [
     gnumake
     gcc
+    (google-cloud-sdk.withExtraComponents
+      (with google-cloud-sdk.components; [
+        gke-gcloud-auth-plugin
+        gcloud-man-pages
+      ])
+    )
   ];
 
   # Rootful Docker for the agent (root is the VM's only user, so there's no
