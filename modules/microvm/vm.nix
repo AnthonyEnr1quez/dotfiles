@@ -171,9 +171,9 @@ in
 
   # Enable QEMU binfmt support so Docker can run amd64-only containers
   boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
-  # Docker containers cannot access the emulator's Nix store dependencies.
-  # Use static QEMU and let binfmt pin it when registering the interpreter.
-  boot.binfmt.preferStaticEmulators = true;
+  # Docker containers use a separate mount namespace, so pin QEMU in the
+  # kernel binfmt handler instead of resolving it from the container.
+  boot.binfmt.registrations."x86_64-linux".fixBinary = true;
   boot.binfmt.addEmulatedSystemsToNixSandbox = false;
 
   # Search our collision-free terminfo first; keep the system path as
