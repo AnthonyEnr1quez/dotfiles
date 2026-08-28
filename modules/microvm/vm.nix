@@ -174,6 +174,7 @@ in
   # Docker containers cannot access the emulator's Nix store dependencies.
   # Use static QEMU and let binfmt pin it when registering the interpreter.
   boot.binfmt.preferStaticEmulators = true;
+  boot.binfmt.addEmulatedSystemsToNixSandbox = false;
 
   # Search our collision-free terminfo first; keep the system path as
   # fallback for entries in dirs the case hack didn't touch (e.g. v/vt220,
