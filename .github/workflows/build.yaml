@@ -44,14 +44,14 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
 
-      - run: nix build --accept-flake-config .#nixosConfigurations.agent-sandbox-damascus.config.system.build.toplevel $VERBOSE_FLAGS
-
-      - run: nix build --accept-flake-config .#nixosConfigurations.agent-sandbox-MacBook-Pro-2.config.system.build.toplevel $VERBOSE_FLAGS
-
-      # Extra aarch64-linux closures the darwin vfkit runners need.
-      - run: nix build --accept-flake-config .#packages.aarch64-linux.agent-sandbox-damascus-runner-deps $VERBOSE_FLAGS
-
-      - run: nix build --accept-flake-config .#packages.aarch64-linux.agent-sandbox-MacBook-Pro-2-runner-deps $VERBOSE_FLAGS
+      # One build shares dependencies and builds independent closures concurrently.
+      - run: >-
+          nix build --accept-flake-config
+          .#nixosConfigurations.agent-sandbox-damascus.config.system.build.toplevel
+          .#nixosConfigurations.agent-sandbox-MacBook-Pro-2.config.system.build.toplevel
+          .#packages.aarch64-linux.agent-sandbox-damascus-runner-deps
+          .#packages.aarch64-linux.agent-sandbox-MacBook-Pro-2-runner-deps
+          $VERBOSE_FLAGS
 
   arm-macos:
     runs-on: macos-26
@@ -66,6 +66,8 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
 
-      - run: nix build --accept-flake-config .#darwinConfigurations.MacBook-Pro-2.config.system.build.toplevel $VERBOSE_FLAGS
-
-      - run: nix build --accept-flake-config .#darwinConfigurations.damascus.config.system.build.toplevel $VERBOSE_FLAGS
+      - run: >-
+          nix build --accept-flake-config
+          .#darwinConfigurations.MacBook-Pro-2.config.system.build.toplevel
+          .#darwinConfigurations.damascus.config.system.build.toplevel
+          $VERBOSE_FLAGS
