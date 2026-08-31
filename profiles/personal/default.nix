@@ -1,4 +1,4 @@
-{ config, host, lib, pkgs, ... }: {
+{ config, lib, pkgs, ... }: {
   user.name = "ant";
 
   hm = {
@@ -6,7 +6,7 @@
       SOPS_AGE_KEY_FILE = "${config.user.home}/.config/sops/age/keys.txt";
     };
 
-    sops = lib.mkIf (host == "damascus") {
+    sops = {
       age.keyFile = "${config.user.home}/.config/sops/age/keys.txt";
       defaultSopsFile = ../../secrets/personal.sops.yaml;
       secrets.gh-hosts = {

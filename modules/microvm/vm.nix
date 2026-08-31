@@ -219,7 +219,7 @@ in
     tag.gpgSign = lib.mkForce false;
   };
 
-  hm.programs.gh.runtimeConfigDir = lib.mkIf (host == "damascus") "/run/host-secrets/gh";
+  hm.programs.gh.runtimeConfigDir = "/run/host-secrets/gh";
 
   # Exit the sandbox by running `poweroff` at its shell prompt.
 
