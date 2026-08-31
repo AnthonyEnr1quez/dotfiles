@@ -8,7 +8,7 @@
 
   # Off by default: the agent-sandbox VM closure is built in CI and pulled from
   # cachix. Flip to true temporarily to (re)build the VM locally, then back.
-  microvm.linuxBuilder.enable = true;
+  microvm.linuxBuilder.enable = false;
 
   hm = {
     firefox = {
