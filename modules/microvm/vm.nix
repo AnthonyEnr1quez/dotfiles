@@ -81,12 +81,17 @@ in
     # (as the invoking user), so $HOME is the real per-user home. Its stdout is
     # appended to the vfkit command line.
     #   - projects (rw): host ~/projects -> guest /root/projects
+    #   - agent-secrets: launch-scoped host secrets -> guest /run/host-secrets
     # Built with vmHostPackages because this script runs on the macOS HOST at
     # launch (not in the guest), so it needs a host-executable (aarch64-darwin)
     # shell.
     extraArgsScript = "${config.microvm.vmHostPackages.writeShellScript "microvm-runtime-shares" ''
       echo \
         "--device" "virtio-fs,sharedDir=$HOME/projects,mountTag=projects"
+      if [ -n "''${AGENT_SECRETS_DIR:-}" ]; then
+        echo \
+          "--device" "virtio-fs,sharedDir=$AGENT_SECRETS_DIR,mountTag=agent-secrets"
+      fi
     ''}";
 
     interfaces = [
@@ -110,6 +115,15 @@ in
   # doesn't block local-fs.target.
   fileSystems."/root/projects" = {
     device = "projects";
+    fsType = "virtiofs";
+    options = [ "nofail" "x-systemd.after=systemd-modules-load.service" ];
+    neededForBoot = false;
+  };
+
+  # The host attaches this mount only for a launch with agent credentials. It
+  # stays optional so CI-built closures and unauthenticated sessions still boot.
+  fileSystems."/run/host-secrets" = {
+    device = "agent-secrets";
     fsType = "virtiofs";
     options = [ "nofail" "x-systemd.after=systemd-modules-load.service" ];
     neededForBoot = false;
@@ -204,6 +218,8 @@ in
     commit.gpgSign = lib.mkForce false;
     tag.gpgSign = lib.mkForce false;
   };
+
+  hm.programs.gh.runtimeConfigDir = lib.mkIf (host == "damascus") "/run/host-secrets/gh";
 
   # Exit the sandbox by running `poweroff` at its shell prompt.
 

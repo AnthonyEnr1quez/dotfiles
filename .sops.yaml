@@ -2,6 +2,10 @@ keys:
   - &personal age1a7ud8ygel5wxlem8p9ukahjmnsg42qk6z94033hav62ke2u74pvqgf9vts
 
 creation_rules:
+  - path_regex: ^secrets/agent-damascus\.sops\.yaml$
+    key_groups:
+      - age:
+          - *personal
   - path_regex: ^secrets/personal\.sops\.yaml$
     key_groups:
       - age:

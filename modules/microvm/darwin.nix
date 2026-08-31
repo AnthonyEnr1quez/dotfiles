@@ -22,6 +22,19 @@ let
   microvm-run = pkgs.writeShellScriptBin "microvm-run" ''
     set -euo pipefail
 
+    agent_secrets_dir=""
+    saved_tty=""
+    cleanup() {
+      if [ -n "$agent_secrets_dir" ]; then
+        rm -rf -- "$agent_secrets_dir"
+      fi
+      if [ -n "$saved_tty" ]; then
+        stty "$saved_tty"
+      fi
+    }
+    trap cleanup EXIT
+    trap 'exit 1' HUP INT TERM
+
     echo "Building agent-sandbox micro VM for ${host} (this needs the Linux builder)..." >&2
     runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
       "${flakeRef}#${runnerAttr}")
@@ -43,9 +56,22 @@ let
     #
     # No `exec`: the EXIT trap must restore the tty after vfkit returns.
     saved_tty="$(stty -g)"
-    trap 'stty "$saved_tty"' EXIT
     stty intr undef quit undef susp undef
-    "$runner/bin/microvm-run"
+
+    ${lib.optionalString (host == "damascus") ''
+      secret_file="${flakeRef}/secrets/agent-damascus.sops.yaml"
+      if [ -f "$secret_file" ]; then
+        agent_secrets_dir="$(mktemp -d "''${TMPDIR:-/tmp}/agent-secrets.XXXXXX")"
+        mkdir "$agent_secrets_dir/gh"
+        SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}" \
+          ${lib.getExe pkgs.sops} decrypt "$secret_file" > "$agent_secrets_dir/gh/hosts.yml"
+        chmod 0400 "$agent_secrets_dir/gh/hosts.yml"
+      else
+        echo "No agent GitHub credential configured; starting without GitHub authentication." >&2
+      fi
+    ''}
+
+    AGENT_SECRETS_DIR="$agent_secrets_dir" "$runner/bin/microvm-run"
   '';
 in
 {
