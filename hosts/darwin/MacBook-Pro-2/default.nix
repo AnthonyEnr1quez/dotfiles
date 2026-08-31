@@ -69,8 +69,8 @@ in
 
     home = {
       sessionVariables = {
-        BUMPER_PD_PATH = "/Users/anthony.enriquez/Projects/moov/mf/platform-dev";
-        BUMPER_INFRA_PATH = "/Users/anthony.enriquez/Projects/moov/mf/infra";
+        BUMPER_PD_PATH = "${mfPath}/platform-dev";
+        BUMPER_INFRA_PATH = "${mfPath}/infra";
         PKG_CONFIG_PATH = libxml2PkgConfigPath;
       };
 

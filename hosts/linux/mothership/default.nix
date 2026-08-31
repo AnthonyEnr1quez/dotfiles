@@ -9,15 +9,15 @@
       ];
 
       activation.installExtensions = with lib.hm.dag.entryAfter [ "writeBoundary" ]; ''
-        if [ -L /home/ant/.vscode-server/extensions ] ; then
-            rm -r /home/ant/.vscode-server/extensions
+        if [ -L ${config.user.home}/.vscode-server/extensions ] ; then
+            rm -r ${config.user.home}/.vscode-server/extensions
         fi
-        ln -s /home/ant/.vscode/extensions /home/ant/.vscode-server
+        ln -s ${config.user.home}/.vscode/extensions ${config.user.home}/.vscode-server
 
-        if [ -L /home/ant/.vscode-server/data/Machine/settings.json ] ; then
-            rm -r /home/ant/.vscode-server/data/Machine/settings.json
+        if [ -L ${config.user.home}/.vscode-server/data/Machine/settings.json ] ; then
+            rm -r ${config.user.home}/.vscode-server/data/Machine/settings.json
         fi
-        ln -s /home/ant/.config/Code/User/settings.json /home/ant/.vscode-server/data/Machine/settings.json
+        ln -s ${config.user.home}/.config/Code/User/settings.json ${config.user.home}/.vscode-server/data/Machine/settings.json
       '';
 
     };
