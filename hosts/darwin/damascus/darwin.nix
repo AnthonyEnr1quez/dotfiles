@@ -1,0 +1,40 @@
+{ pkgs, ... }:
+{
+  imports = [ ../../../modules/microvm/darwin.nix ];
+
+  hm = {
+    firefox = {
+      bookmarksToolbar = "never";
+      extraExtensions = with pkgs.nur.repos.rycee.firefox-addons; [
+        facebook-container
+        multi-account-containers
+        news-feed-eradicator
+        reddit-enhancement-suite
+      ];
+    };
+
+    home.packages = with pkgs; [
+      discord
+    ];
+  };
+
+  users.users.jen.home = "/Users/jen";
+  home-manager.users.jen = {
+    home.stateVersion = "26.05";
+
+    programs.firefox = {
+      enable = true;
+      package = pkgs.firefox-bin;
+      profiles.jj.isDefault = true;
+    };
+  };
+
+  homebrew = {
+    casks = [
+      "balenaetcher"
+      "bitwarden"
+      "mullvad-vpn"
+      "signal"
+    ];
+  };
+}

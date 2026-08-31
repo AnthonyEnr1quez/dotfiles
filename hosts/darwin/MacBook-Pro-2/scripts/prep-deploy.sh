@@ -42,6 +42,8 @@ slack_message=":pr: $service_name,
 - staging: $staging_pr_url
 - production: $production_pr_url"
 
-echo "$slack_message" | pbcopy
+if command -v pbcopy > /dev/null; then
+  echo "$slack_message" | pbcopy
+fi
 
 echo "$service_name $latest_tag prepped for deploy, good luck :)"

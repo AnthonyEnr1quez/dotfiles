@@ -132,28 +132,34 @@
           modules = baseModules ++ extraModules;
           specialArgs = { inherit self inputs nixpkgs host profile; };
         };
-    in
-    {
-      darwinConfigurations = {
-        # drachenflieger = mkDarwinConfig { host = "drachenflieger"; system = "x86_64-darwin"; };
 
-        damascus = mkDarwinConfig { host = "damascus"; };
-        MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; profile = "work"; };
-      };
-
-      nixosConfigurations = {
-        # LLM/agent sandbox micro VM, built for aarch64-linux and run on
-        # Apple Silicon macOS via vfkit. Build/run through `microvm-run` on a
-        # configured darwin host.
-        agent-sandbox = nixpkgs.lib.nixosSystem {
+      mkMicrovmConfig =
+        { host }:
+        nixpkgs.lib.nixosSystem {
           system = "aarch64-linux";
-          specialArgs = { inherit self inputs; };
+          specialArgs = { inherit self inputs host; };
           modules = [
             microvm.nixosModules.microvm
             home-manager.nixosModules.home-manager
             ./modules/microvm/vm.nix
             { microvm.vmHostPackages = nixpkgs.legacyPackages.aarch64-darwin; }
           ];
+        };
+
+    in
+    {
+      darwinConfigurations = {
+        damascus = mkDarwinConfig { host = "damascus"; };
+        MacBook-Pro-2 = mkDarwinConfig { host = "MacBook-Pro-2"; profile = "work"; };
+      };
+
+      nixosConfigurations = {
+        agent-sandbox-damascus = mkMicrovmConfig {
+          host = "damascus";
+        };
+
+        agent-sandbox-MacBook-Pro-2 = mkMicrovmConfig {
+          host = "MacBook-Pro-2";
         };
 
         mothership = mkNixosConfig {
@@ -178,15 +184,23 @@
     )
     //
     {
-      # The aarch64-darwin vfkit runner (declaredRunner) pulls in one extra
+      # An aarch64-darwin vfkit runner (declaredRunner) pulls in one extra
       # aarch64-linux path — the guest's closureInfo (regInfo) — that is NOT in
-      # `system.build.toplevel`. CI builds this on the arm-linux runner so it
-      # lands in cachix; otherwise the arm-macos job can't substitute it and has
-      # no Linux builder, so building declaredRunner there fails.
-      packages.aarch64-linux.agent-sandbox-runner-deps =
-        let
-          cfg = self.nixosConfigurations.agent-sandbox;
-        in
-        cfg.pkgs.closureInfo { rootPaths = [ cfg.config.system.build.toplevel ]; };
+      # `system.build.toplevel`. CI builds these on the arm-linux runner so they
+      # land in cachix; otherwise the arm-macos job can't substitute them and
+      # has no Linux builder to build the runners.
+      packages.aarch64-linux = {
+        agent-sandbox-damascus-runner-deps =
+          let
+            cfg = self.nixosConfigurations.agent-sandbox-damascus;
+          in
+          cfg.pkgs.closureInfo { rootPaths = [ cfg.config.system.build.toplevel ]; };
+
+        agent-sandbox-MacBook-Pro-2-runner-deps =
+          let
+            cfg = self.nixosConfigurations.agent-sandbox-MacBook-Pro-2;
+          in
+          cfg.pkgs.closureInfo { rootPaths = [ cfg.config.system.build.toplevel ]; };
+      };
     };
 }

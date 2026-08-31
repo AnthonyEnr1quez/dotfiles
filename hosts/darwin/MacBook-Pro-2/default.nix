@@ -1,15 +1,12 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, ... }:
 let
-  mfPath = "${config.user.home}/Projects/moov/mf";
+  projectsPath =
+    if pkgs.stdenvNoCC.hostPlatform.isDarwin then
+      "${config.user.home}/Projects"
+    else
+      "/root/projects";
+  mfPath = "${projectsPath}/moov/mf";
   libxml2PkgConfigPath = "${pkgs.libxml2_13.dev}/lib/pkgconfig";
-
-  goland = pkgs.jetbrains.goland.overrideAttrs (_: rec {
-    version = "2026.2.1.1";
-    src = pkgs.fetchurl {
-      url = "https://download.jetbrains.com/go/goland-${version}-aarch64.dmg";
-      hash = "sha256-61sgox2XxJTyjcxDrpi365t3fJgI0cr9tMSO9PxFzkY=";
-    };
-  });
 
   sift = pkgs.buildGoModule rec {
     pname = "sift";
@@ -61,14 +58,12 @@ let
   ];
 in
 {
-  # GUI apps do not inherit Home Manager's shell session variables.
-  launchd.user.envVariables.PKG_CONFIG_PATH = libxml2PkgConfigPath;
-
   hm = {
     mcp.enable = true;
 
     home = {
       sessionVariables = {
+        PROJECTS_PATH = projectsPath;
         BUMPER_PD_PATH = "${mfPath}/platform-dev";
         BUMPER_INFRA_PATH = "${mfPath}/infra";
         PKG_CONFIG_PATH = libxml2PkgConfigPath;
@@ -78,7 +73,6 @@ in
         wget
         opentofu
         spacectl
-        goland
         jq
         gotools
 
@@ -116,15 +110,4 @@ in
       go.env.GOPRIVATE = [ "github.com/moov-io/*" "github.com/moovfinancial/*" ];
     };
   };
-
-  homebrew = {
-    casks = [
-      "google-drive"
-      "linear"
-      "notion"
-      "1password"
-    ];
-  };
-
-  system.defaults.LaunchServices.LSQuarantine = lib.mkForce true;
 }

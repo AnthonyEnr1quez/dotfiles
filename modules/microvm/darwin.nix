@@ -1,4 +1,4 @@
-# Darwin-side wiring for the agent-sandbox micro VM.
+# Darwin-side wiring for a host's agent-sandbox micro VM.
 #
 # Provides:
 #   * a `microvm-run` command on PATH that boots the VM via vfkit. Exit the VM
@@ -7,22 +7,22 @@
 #     closure. It is off by default; flip `microvm.linuxBuilder.enable = true`
 #     and rebuild when you need to (re)build the VM, then turn it back off.
 #
-# The VM is defined in flake.nix as `nixosConfigurations.agent-sandbox`. The
-# `microvm-run` wrapper builds the aarch64-linux VM closure LAZILY at runtime
+# Each enabled Darwin host selects its matching `agent-sandbox-<host>` output.
+# The `microvm-run` wrapper builds the aarch64-linux VM closure LAZILY at runtime
 # (via `nix build`) rather than embedding it as a build-time dependency of the
 # darwin system. Embedding it would force every `darwin-rebuild` to build the
 # VM, which requires the Linux builder and creates a chicken-and-egg problem.
-{ config, lib, pkgs, self, ... }:
+{ config, host, lib, pkgs, self, ... }:
 let
   cfg = config.microvm.linuxBuilder;
 
   flakeRef = self.outPath;
-  runnerAttr = "nixosConfigurations.agent-sandbox.config.microvm.declaredRunner";
+  runnerAttr = "nixosConfigurations.agent-sandbox-${host}.config.microvm.declaredRunner";
 
   microvm-run = pkgs.writeShellScriptBin "microvm-run" ''
     set -euo pipefail
 
-    echo "Building agent-sandbox micro VM (this needs the Linux builder)..." >&2
+    echo "Building agent-sandbox micro VM for ${host} (this needs the Linux builder)..." >&2
     runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
       "${flakeRef}#${runnerAttr}")
 
@@ -55,31 +55,33 @@ in
     disable to free the builder VM's resources (see the sizing below)
   '';
 
-  config = {
-    environment.systemPackages = [ microvm-run ];
+  config = lib.mkMerge [
+    { environment.systemPackages = [ microvm-run ]; }
 
-    nix = lib.mkIf cfg.enable {
-      distributedBuilds = true;
-      linux-builder = {
-        enable = true;
-        systems = [ "aarch64-linux" ];
+    (lib.mkIf cfg.enable {
+      nix = {
+        distributedBuilds = true;
+        linux-builder = {
+          enable = true;
+          systems = [ "aarch64-linux" ];
 
-        # Beefed-up builder VM for faster aarch64-linux builds while iterating.
-        # Defaults are ~1 vCPU / 3 GiB. Sized to leave headroom on a 16 GiB
-        # M3 MacBook Air (8 cores): give the builder 6 cores / 6 GiB so macOS
-        # keeps ~10 GiB and avoids heavy swapping.
-        # (Only matters while linuxBuilder.enable = true.)
-        maxJobs = 4;
-        config = {
-          virtualisation = {
-            cores = 6;
-            darwin-builder = {
-              memorySize = 6144; # 6 GiB
-              diskSize = 61440; # 60 GiB
+          # Beefed-up builder VM for faster aarch64-linux builds while iterating.
+          # Defaults are ~1 vCPU / 3 GiB. Sized to leave headroom on a 16 GiB
+          # M3 MacBook Air (8 cores): give the builder 6 cores / 6 GiB so macOS
+          # keeps ~10 GiB and avoids heavy swapping.
+          # (Only matters while linuxBuilder.enable = true.)
+          maxJobs = 4;
+          config = {
+            virtualisation = {
+              cores = 6;
+              darwin-builder = {
+                memorySize = 6144; # 6 GiB
+                diskSize = 61440; # 60 GiB
+              };
             };
           };
         };
       };
-    };
-  };
+    })
+  ];
 }

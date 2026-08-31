@@ -7,7 +7,7 @@
 # Networking note: vfkit only supports user-mode (NAT) networking. The VM can
 # reach the host/internet outbound, but the host cannot initiate connections
 # into the VM.
-{ lib, pkgs, config, ... }:
+{ lib, pkgs, config, host, ... }:
 let
   # Terminfo entries the VM can actually resolve. The VM runs from the host's
   # /nix/store, which sits on case-insensitive APFS: Nix's darwin case hack
@@ -23,7 +23,8 @@ let
   '';
 in
 {
-  imports = [ ../common.nix ];
+  imports = [ ../common.nix ]
+    ++ lib.optional (host != null) (../../hosts/darwin + "/${host}");
 
   networking.hostName = "agent-sandbox";
   services.getty.autologinUser = "root";

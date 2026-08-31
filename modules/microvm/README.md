@@ -1,8 +1,8 @@
-# agent-sandbox micro VM
+# agent-sandbox microVMs
 
-A NixOS micro VM for sandboxing LLM/coding agents, run on Apple Silicon macOS
-via [vfkit](https://github.com/crc-org/vfkit) (Apple Virtualization framework)
-using [microvm.nix](https://github.com/microvm-nix/microvm.nix).
+Host-specific NixOS microVMs for sandboxing LLM/coding agents. They run on
+Apple Silicon macOS through [vfkit](https://github.com/crc-org/vfkit) (Apple
+Virtualization framework) using [microvm.nix](https://github.com/microvm-nix/microvm.nix).
 
 Based on <https://abhinavsarkar.net/notes/2026-microvm-nix/>.
 
@@ -56,18 +56,35 @@ model instead of implying a boundary that doesn't exist.
 
 ## Files
 
-- `vm.nix` — the guest NixOS config (vfkit, resources, shares, tooling).
-  Reuses `modules/common.nix`, so the VM has the same home-manager tooling as
-  a normal host (git, go, fish, direnv, opencode, ...) applied to the
-  autologin `root` user.
-- `darwin.nix` — host-side wiring: the `microvm-run` launcher and the opt-in
-  `linux-builder`.
-- Wired into all darwin hosts via `hosts/darwin/default.nix`.
+- `vm.nix` configures the guest's vfkit runtime, storage, shares, and sandbox
+  settings. It imports the selected host's portable `default.nix`.
+- `hosts/darwin/<host>/default.nix` holds packages, shell configuration, and
+  other settings shared by the Darwin host and its VM.
+- `hosts/darwin/<host>/darwin.nix` holds macOS-only settings such as GUI apps,
+  Homebrew, `launchd`, and system defaults.
+- `darwin.nix` provides the host-side `microvm-run` launcher and opt-in Linux
+  builder.
+
+## Host configuration
+
+Each enabled Darwin host has a matching NixOS output:
+
+- `agent-sandbox-damascus`
+- `agent-sandbox-MacBook-Pro-2`
+
+Import `modules/microvm/darwin.nix` from a host's `darwin.nix` to install
+`microvm-run`. The command builds that host's matching guest. The guest logs in
+as `root` and keeps its hostname as `agent-sandbox`, but receives the host's
+portable packages, environment variables, shell settings, and development
+tools.
+
+The guest excludes macOS-only configuration. It does not receive GUI apps,
+Homebrew casks, `launchd` settings, macOS system defaults, or host secrets.
 
 ## Building & running
 
-The VM is `aarch64-linux`. Its closure is built in CI and pushed to cachix, so
-normally you just run it and Nix substitutes the closure:
+Each VM is `aarch64-linux`. CI builds the enabled guest closures and pushes them
+to Cachix, so you normally run:
 
 ```sh
 microvm-run          # builds/substitutes the VM, then boots it via vfkit
@@ -75,9 +92,9 @@ microvm-run          # builds/substitutes the VM, then boots it via vfkit
 
 Exit the VM with `poweroff` at its shell prompt.
 
-To (re)build the VM locally (e.g. while iterating on `vm.nix`), temporarily
-flip `microvm.linuxBuilder.enable = true` in `hosts/darwin/default.nix`,
-rebuild + switch, run, then flip it back to free the builder VM's resources.
+To (re)build a VM locally, temporarily set `microvm.linuxBuilder.enable = true`
+in the host's `darwin.nix`, rebuild and switch, run `microvm-run`, then set it
+back to `false`.
 
 State locations on the host (per-user, resolved at launch via `$HOME`):
 
