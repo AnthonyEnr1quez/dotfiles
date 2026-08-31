@@ -13,6 +13,10 @@
 
       # https://blog.gitbutler.com/how-git-core-devs-configure-git
       settings = {
+        user = {
+          email = "32233059+AnthonyEnr1quez@users.noreply.github.com";
+          name = "AnthonyEnr1quez";
+        };
         alias = {
           default-branch = "!git symbolic-ref refs/remotes/origin/HEAD | cut -d '/' -f3,4";
           com = "!f(){ git checkout $(git default-branch) $@;}; f";

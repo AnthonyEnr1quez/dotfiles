@@ -5,7 +5,7 @@
     ./editors
     ./firefox
     ./git
-    ./k9s
+    ./kubernetes
     ./langs
     ./shells
     ./ssh
@@ -14,6 +14,8 @@
 
   home = {
     stateVersion = "26.05";
+
+    sessionVariables.DO_NOT_TRACK = "true";
 
     packages = with pkgs; [
       # ansible
@@ -26,7 +28,6 @@
       # iterm2
       # jetbrains.goland
       # jetbrains.idea-community
-      kubectl
       kubectx
       # kubelogin
       # kubernetes-helm-wrapped

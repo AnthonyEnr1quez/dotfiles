@@ -203,20 +203,10 @@ in
   };
   hm.mcp.enable = true;
 
-  # Git identity for the sandbox. The `profiles/` module (which sets these on
-  # real hosts) isn't imported by the VM, and the shared git module forces SSH
-  # commit signing with a key that doesn't exist in the VM. Set an identity and
-  # disable signing so the agent can commit; re-sign on the host if signed
-  # history is needed.
-  #
-  # TODO: name/email are duplicated from profiles/default.nix. Importing
-  # ./profiles here conflicts (personal/default.nix sets user.name = "ant" vs
-  # the VM's root). Extract the identity to a shared module both can import.
+  # The shared git module enables SSH commit signing with a key that does not
+  # exist in the VM. Disable signing so the agent can commit; re-sign on the
+  # host if signed history is needed.
   hm.programs.git.settings = {
-    user = {
-      email = "32233059+AnthonyEnr1quez@users.noreply.github.com";
-      name = "AnthonyEnr1quez";
-    };
     commit.gpgSign = lib.mkForce false;
     tag.gpgSign = lib.mkForce false;
   };
