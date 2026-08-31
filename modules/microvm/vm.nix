@@ -8,20 +8,6 @@
 # reach the host/internet outbound, but the host cannot initiate connections
 # into the VM.
 { lib, pkgs, config, host, ... }:
-let
-  # Terminfo entries the VM can actually resolve. The VM runs from the host's
-  # /nix/store, which sits on case-insensitive APFS: Nix's darwin case hack
-  # renames terminfo's case-colliding dirs (x/ collides with X/ and becomes
-  # "x~nix~case~hack~1"), so the guest can't look up TERM=xterm-256color (what
-  # herdr sets for its panes). This package contains only lowercase dirs — no
-  # collisions, so the case hack leaves it alone and the guest sees it intact.
-  vm-terminfo = pkgs.runCommand "vm-terminfo" { } ''
-    mkdir -p $out/share/terminfo/{x,t,s}
-    cp -L ${pkgs.ncurses}/share/terminfo/x/xterm* $out/share/terminfo/x/
-    cp -L ${pkgs.ncurses}/share/terminfo/t/tmux* $out/share/terminfo/t/
-    cp -L ${pkgs.ncurses}/share/terminfo/s/screen* $out/share/terminfo/s/
-  '';
-in
 {
   imports = [ ../common.nix ]
     ++ lib.optional (host != null) (../../hosts/darwin + "/${host}");
@@ -52,9 +38,9 @@ in
         mountPoint = "/nix/.rw-store";
         size = 40960; # 40 GiB
       }
-      # Persistent agent state (opencode + herdr sessions), symlinked out of
-      # the tmpfs /root via the tmpfiles rules below. Sparse image: the size
-      # is a cap, not an allocation.
+      # Persistent opencode state, symlinked out of the tmpfs /root via the
+      # tmpfiles rules below. Sparse image: the size is a cap, not an
+      # allocation.
       {
         image = "agent-state.img";
         mountPoint = "/var/lib/agent-state";
@@ -119,10 +105,8 @@ in
   networking.firewall.allowedTCPPorts = [ 4096 ];
 
   # Persist agent state on the agent-state volume: create the backing dirs
-  # and symlink them into root's tmpfs home. tmpfiles runs after
-  # local-fs.target (volume mounted) and before home-manager activation,
-  # which writes its managed files (e.g. herdr's config.toml) through the
-  # symlinks.
+  # and symlink it into root's tmpfs home. tmpfiles runs after local-fs.target
+  # (volume mounted) and before home-manager activation writes opencode state.
   #
   # Deliberately a static list: which paths persist is a property of this VM,
   # not of the apps' home-manager config.
@@ -135,12 +119,7 @@ in
     in
     [ "d /nix/.rw-store/nix-build 0755 root root -" ]
     # opencode: sessions/history/db
-    ++ persist "opencode" "/root/.local/share/opencode"
-    # herdr: resumable session state (session.json / session-history.json)
-    # lives in its config dir. Whole dir, not per-file symlinks — atomic
-    # temp-file+rename saves would silently replace file symlinks. Its XDG
-    # state dir is just a regenerable version cache; not persisted.
-    ++ persist "herdr" "/root/.config/herdr";
+    ++ persist "opencode" "/root/.local/share/opencode";
 
   # Big gotcha workaround: the VM's root FS is a tmpfs (RAM), and Nix's build
   # sandbox is created on the root FS by default. Disable the sandbox and point
@@ -165,14 +144,6 @@ in
   # exception).
   virtualisation.docker.enable = true;
 
-  # Search our collision-free terminfo first; keep the system path as
-  # fallback for entries in dirs the case hack didn't touch (e.g. v/vt220,
-  # the serial console's TERM).
-  environment.variables.TERMINFO_DIRS = [
-    "${vm-terminfo}/share/terminfo"
-    "/run/current-system/sw/share/terminfo"
-  ];
-
   # Treat the VM like another machine: reuse the shared system config
   # (modules/common.nix), which bootstraps home-manager and pulls in the full
   # modules/home-manager tooling barrel. The primary user here is root (the
@@ -196,6 +167,7 @@ in
     enable = true;
     sandboxed = true;
   };
+  hm.herdr.enable = false;
   hm.mcp.enable = true;
 
   systemd.services.opencode = {

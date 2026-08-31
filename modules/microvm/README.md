@@ -102,9 +102,8 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   overlay (persists across runs).
 - `~/.local/share/microvm/agent-state.img` — persistent agent state. The VM
   is otherwise stateless (tmpfs root; config comes from the Nix closure), but
-  opencode sessions/history (`~/.local/share/opencode`) and herdr session
-  state (`~/.config/herdr`) are symlinked onto this volume so they survive
-  `poweroff`.
+  opencode sessions/history (`~/.local/share/opencode`) are symlinked onto this
+  volume so they survive `poweroff`.
 
 Note: opencode's `auth.json` (API credentials) lives in that persisted state
 — same protection class as the host's own `~/.local/share/opencode`, but be
