@@ -74,6 +74,10 @@ in
           config = {
             virtualisation = {
               cores = 6;
+              # nixpkgs currently selects GICv2 for aarch64 guests on Darwin,
+              # but current macOS HVF only supports GICv3. Remove after updating
+              # past https://github.com/NixOS/nixpkgs/pull/555928.
+              qemu.options = [ "-machine virt,gic-version=3,accel=hvf:tcg" ];
               darwin-builder = {
                 memorySize = 6144; # 6 GiB
                 diskSize = 61440; # 60 GiB
