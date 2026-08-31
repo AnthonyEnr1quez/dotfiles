@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '.github/**'
+    paths:
+      - '**'
+      - '!.github/**'
+      - '.github/workflows/cachix.yaml'
   workflow_dispatch:
     inputs:
       verbose:
