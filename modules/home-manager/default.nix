@@ -36,6 +36,7 @@
       # pgadmin4
       # slack
       # unar
+      wget
       zlib
     ];
   };
@@ -69,13 +70,8 @@
     };
 
     fd.enable = true;
-
-    # TODO explore more
-    # gnupg.enable = true;
-    # jq.enable = true;
-    # ## compare
-    # htop.enable = true;
-    # btm.enable = true;
+    jq.enable = true;
+    bottom.enable = true;
   };
 
   targets.darwin = lib.mkIf pkgs.stdenvNoCC.hostPlatform.isDarwin {

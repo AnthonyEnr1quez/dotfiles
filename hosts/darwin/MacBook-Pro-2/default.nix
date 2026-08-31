@@ -70,10 +70,8 @@ in
       };
 
       packages = with pkgs; [
-        wget
         opentofu
         spacectl
-        jq
         gotools
 
         (google-cloud-sdk.withExtraComponents
