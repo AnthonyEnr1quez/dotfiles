@@ -25,6 +25,7 @@
   # let nix manage home-manager profiles and use global nixpkgs
   home-manager = {
     extraSpecialArgs = { inherit self inputs; };
+    sharedModules = [ inputs.sops-nix.homeManagerModules.sops ];
     useGlobalPkgs = true;
     useUserPackages = true;
     # backupFileExtension = "backup";

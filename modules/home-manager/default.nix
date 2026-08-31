@@ -19,6 +19,7 @@
 
     packages = with pkgs; [
       # ansible
+      age
       # coreutils
       # cachix
       # element-desktop
@@ -35,6 +36,7 @@
       nixd
       # pgadmin4
       # slack
+      sops
       # unar
       wget
       zlib
