@@ -19,6 +19,10 @@ let
   guestAddress = "192.168.64.2";
   opencodePort = 4096;
   runnerAttr = "nixosConfigurations.agent-sandbox-${host}.config.microvm.declaredRunner";
+  opencodeAliases = {
+    opencode = "opencode-vm";
+    opencode-local = lib.getExe pkgs.opencode;
+  };
 
   opencode-vm = pkgs.writeShellScriptBin "opencode-vm" ''
     set -euo pipefail
@@ -38,6 +42,11 @@ let
         exit 2
         ;;
     esac
+
+    if ! ${lib.getExe pkgs.curl} --fail --silent \
+      http://${guestAddress}:${toString opencodePort}/global/health >/dev/null; then
+      ${microvm}/bin/microvm start
+    fi
 
     exec ${lib.getExe pkgs.opencode} attach http://${guestAddress}:${toString opencodePort} \
       --dir "/root/projects$relative" "$@"
@@ -75,6 +84,11 @@ let
       esac
     }
 
+    healthy() {
+      ${lib.getExe pkgs.curl} --fail --silent \
+        http://${guestAddress}:${toString opencodePort}/global/health >/dev/null
+    }
+
     prepare() {
       mkdir -p "$statedir"
       if running; then
@@ -84,21 +98,29 @@ let
       rm -f "$pidfile"
 
       echo "Building/substituting agent-sandbox micro VM for ${host}..." >&2
-      runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
-        "${flakeRef}#${runnerAttr}")
+      runner="$statedir/runner"
+      ${lib.getExe pkgs.nix} build --out-link "$runner" \
+        "${flakeRef}#${runnerAttr}"
       cd "$statedir"
     }
 
     case "''${1:-help}" in
       start)
+        if running; then
+          if healthy; then
+            echo "agent-sandbox is already running (PID $pid)." >&2
+            exit 0
+          fi
+          echo "agent-sandbox is running, but OpenCode is unavailable." >&2
+          exit 1
+        fi
         prepare
         # vfkit's stdio console requires a terminal even when detached.
         ${lib.getExe' pkgs.coreutils "nohup"} /usr/bin/script -q "$logfile" \
           "$runner/bin/microvm-run" </dev/null >/dev/null 2>&1 &
         launcher_pid=$!
         for ((attempt = 0; attempt < 120; attempt++)); do
-          if running && ${lib.getExe pkgs.curl} --fail --silent \
-            http://${guestAddress}:${toString opencodePort}/global/health >/dev/null; then
+          if running && healthy; then
             echo "Started agent-sandbox (PID $pid)." >&2
             exit 0
           fi
@@ -141,8 +163,7 @@ let
           echo "agent-sandbox is stopped"
           exit 1
         fi
-        if ${lib.getExe pkgs.curl} --fail --silent \
-          http://${guestAddress}:${toString opencodePort}/global/health >/dev/null; then
+        if healthy; then
           echo "agent-sandbox is running (PID $pid, OpenCode healthy)"
         else
           echo "agent-sandbox is running (PID $pid, OpenCode unavailable)"
@@ -171,7 +192,13 @@ in
   '';
 
   config = lib.mkMerge [
-    { environment.systemPackages = [ microvm opencode-vm ]; }
+    {
+      environment.systemPackages = [ microvm opencode-vm ];
+      hm.programs = {
+        fish.shellAliases = opencodeAliases;
+        zsh.shellAliases = opencodeAliases;
+      };
+    }
 
     (lib.mkIf cfg.enable {
       nix = {

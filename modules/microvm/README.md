@@ -110,6 +110,7 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   volume so they survive `poweroff`.
 - `~/.local/share/microvm/vfkit.pid` and `vfkit.log` — background process state
   and console output.
+- `~/.local/share/microvm/runner` — GC root for the running VM closure.
 
 Note: opencode's `auth.json` (API credentials) lives in that persisted state
 — same protection class as the host's own `~/.local/share/opencode`, but be
@@ -129,9 +130,10 @@ without it.
 
 ## Workflow
 
-Start the VM with `microvm start`, change to a directory below `~/projects`,
-and run `opencode-vm`. The host TUI attaches to the OpenCode server in the VM
-with the corresponding `/root/projects` directory.
+From a directory below `~/projects`, run `opencode`. It starts the VM when
+needed and attaches the host TUI to its OpenCode server with the corresponding
+`/root/projects` directory. `opencode-vm` is an explicit alias for the same
+remote behavior; use `opencode-local` to run OpenCode directly on macOS.
 
 Keep the same directory open in your host editor: you see edits live, intervene
 alongside the agent, and finished work is already in the host repo. Commit,
