@@ -91,12 +91,6 @@ in
     };
 
     programs = {
-      gh = {
-        enable = true;
-        gitCredentialHelper.enable = false;
-        settings.telemetry = "disabled";
-      };
-
       zsh = {
         cdpath = [ mfPath ];
       };

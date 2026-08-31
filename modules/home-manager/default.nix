@@ -4,12 +4,12 @@
     ./catppuccin
     ./editors
     ./firefox
-    ./git
     ./kubernetes
     ./langs
     ./shells
     ./ssh
     ./terms
+    ./vcs
   ];
 
   home = {
