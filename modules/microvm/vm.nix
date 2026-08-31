@@ -4,9 +4,9 @@
 # (Apple Virtualization framework). See:
 # https://abhinavsarkar.net/notes/2026-microvm-nix/
 #
-# Networking note: vfkit only supports user-mode (NAT) networking. The VM can
-# reach the host/internet outbound, but the host cannot initiate connections
-# into the VM.
+# Networking note: vfkit only supports user-mode (NAT) networking. It does not
+# forward localhost ports, so host commands use the guest's conventional
+# 192.168.64.2 DHCP address.
 { lib, pkgs, config, host, ... }:
 {
   imports = [ ../common.nix ]
