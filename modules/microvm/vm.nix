@@ -169,13 +169,6 @@ in
   # exception).
   virtualisation.docker.enable = true;
 
-  # Enable QEMU binfmt support so Docker can run amd64-only containers
-  boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
-  # Docker containers use a separate mount namespace, so pin QEMU in the
-  # kernel binfmt handler instead of resolving it from the container.
-  boot.binfmt.registrations."x86_64-linux".fixBinary = true;
-  boot.binfmt.addEmulatedSystemsToNixSandbox = false;
-
   # Search our collision-free terminfo first; keep the system path as
   # fallback for entries in dirs the case hack didn't touch (e.g. v/vt220,
   # the serial console's TERM).
