@@ -116,6 +116,7 @@ in
   };
 
   networking.interfaces.eth0.useDHCP = true;
+  networking.firewall.allowedTCPPorts = [ 4096 ];
 
   # Persist agent state on the agent-state volume: create the backing dirs
   # and symlink them into root's tmpfs home. tmpfiles runs after
@@ -196,6 +197,25 @@ in
     sandboxed = true;
   };
   hm.mcp.enable = true;
+
+  systemd.services.opencode = {
+    description = "OpenCode server";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" "home-manager-root.service" ];
+
+    environment = {
+      HOME = "/root";
+      PATH = lib.mkForce "/etc/profiles/per-user/root/bin:/run/current-system/sw/bin";
+    };
+
+    serviceConfig = {
+      ExecStart = "${lib.getExe pkgs.opencode} serve --hostname 0.0.0.0 --port 4096";
+      Restart = "on-failure";
+      RestartSec = 2;
+      WorkingDirectory = "/root";
+    };
+  };
 
   # The shared git module enables SSH commit signing with a key that does not
   # exist in the VM. Disable signing so the agent can commit; re-sign on the

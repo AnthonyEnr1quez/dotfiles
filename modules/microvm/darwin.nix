@@ -19,6 +19,29 @@ let
   flakeRef = self.outPath;
   runnerAttr = "nixosConfigurations.agent-sandbox-${host}.config.microvm.declaredRunner";
 
+  opencode-vm = pkgs.writeShellScriptBin "opencode-vm" ''
+    set -euo pipefail
+
+    case "$PWD" in
+      "$HOME/projects"|"$HOME/Projects")
+        relative=""
+        ;;
+      "$HOME/projects/"*)
+        relative="''${PWD#"$HOME/projects"}"
+        ;;
+      "$HOME/Projects/"*)
+        relative="''${PWD#"$HOME/Projects"}"
+        ;;
+      *)
+        echo "opencode-vm must be run under ~/projects" >&2
+        exit 2
+        ;;
+    esac
+
+    exec ${lib.getExe pkgs.opencode} attach http://192.168.64.2:4096 \
+      --dir "/root/projects$relative" "$@"
+  '';
+
   microvm-run = pkgs.writeShellScriptBin "microvm-run" ''
     set -euo pipefail
 
@@ -56,7 +79,7 @@ in
   '';
 
   config = lib.mkMerge [
-    { environment.systemPackages = [ microvm-run ]; }
+    { environment.systemPackages = [ microvm-run opencode-vm ]; }
 
     (lib.mkIf cfg.enable {
       nix = {
