@@ -19,6 +19,7 @@
     hypervisor = "vfkit";
     vcpu = 4;
     mem = 8192; # 8 GiB
+    vfkit.extraArgs = [ "--pidfile" "vfkit.pid" ];
 
     # Disable the vfkit control socket. With a socket, microvm.nix wraps the
     # vfkit invocation in `bash -c '...'`, which causes the runtime-injected
@@ -166,6 +167,7 @@
   hm.opencode = {
     enable = true;
     sandboxed = true;
+    server = true;
   };
   hm.herdr.enable = false;
   hm.mcp.enable = true;
@@ -182,7 +184,7 @@
     };
 
     serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.opencode} serve --hostname 0.0.0.0 --port 4096";
+      ExecStart = "${lib.getExe pkgs.opencode} serve";
       Restart = "on-failure";
       RestartSec = 2;
       WorkingDirectory = "/root";

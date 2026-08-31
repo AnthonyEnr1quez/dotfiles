@@ -40,6 +40,9 @@ in
       Rules protecting live repo state (git, rm) and secrets (read denies)
       still apply, since those risks aren't mitigated by the sandbox boundary
     '';
+    server = mkEnableOption ''
+      configure opencode serve to listen on all interfaces on port 4096
+    '';
   };
 
   config = mkIf cfg.enable {
@@ -64,6 +67,11 @@ in
         tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
 
         settings = {
+          server = lib.mkIf cfg.server {
+            hostname = "0.0.0.0";
+            port = 4096;
+          };
+
           lsp = true; # todo gopls on mod and sum?
 
           # https://github.com/wimpysworld/nix-config/blob/4ce6c0e6afffcd6586306cd92499c4fb62efe749/home-manager/_mixins/development/opencode/default.nix

@@ -42,7 +42,7 @@ jobs:
 
   arm-linux:
     # Builds each aarch64-linux agent-sandbox micro VM system closure and pushes
-    # them to cachix, so the macOS hosts can substitute them via `microvm-run`
+    # them to cachix, so the macOS hosts can substitute them via `microvm start`
     # instead of running the local linux-builder. The vfkit runners themselves
     # are aarch64-darwin and are built in the arm-macos job below.
     runs-on: ubuntu-24.04-arm

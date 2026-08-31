@@ -1,14 +1,13 @@
 # Darwin-side wiring for a host's agent-sandbox micro VM.
 #
 # Provides:
-#   * a `microvm-run` command on PATH that boots the VM via vfkit. Exit the VM
-#     with `poweroff` from its shell.
+#   * a `microvm` command for foreground/background VM lifecycle management.
 #   * an opt-in NixOS linux-builder (aarch64-linux) needed to *build* the VM
 #     closure. It is off by default; flip `microvm.linuxBuilder.enable = true`
 #     and rebuild when you need to (re)build the VM, then turn it back off.
 #
 # Each enabled Darwin host selects its matching `agent-sandbox-<host>` output.
-# The `microvm-run` wrapper builds the aarch64-linux VM closure LAZILY at runtime
+# The `microvm` wrapper builds the aarch64-linux VM closure LAZILY at runtime
 # (via `nix build`) rather than embedding it as a build-time dependency of the
 # darwin system. Embedding it would force every `darwin-rebuild` to build the
 # VM, which requires the Linux builder and creates a chicken-and-egg problem.
@@ -17,6 +16,8 @@ let
   cfg = config.microvm.linuxBuilder;
 
   flakeRef = self.outPath;
+  guestAddress = "192.168.64.2";
+  opencodePort = 4096;
   runnerAttr = "nixosConfigurations.agent-sandbox-${host}.config.microvm.declaredRunner";
 
   opencode-vm = pkgs.writeShellScriptBin "opencode-vm" ''
@@ -38,37 +39,128 @@ let
         ;;
     esac
 
-    exec ${lib.getExe pkgs.opencode} attach http://192.168.64.2:4096 \
+    exec ${lib.getExe pkgs.opencode} attach http://${guestAddress}:${toString opencodePort} \
       --dir "/root/projects$relative" "$@"
   '';
 
-  microvm-run = pkgs.writeShellScriptBin "microvm-run" ''
+  microvm = pkgs.writeShellScriptBin "microvm" ''
     set -euo pipefail
 
-    echo "Building agent-sandbox micro VM for ${host} (this needs the Linux builder)..." >&2
-    runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
-      "${flakeRef}#${runnerAttr}")
-
-    # vfkit creates the VM's disk image(s) in the current directory (the image
-    # paths in vm.nix are relative). Pin them to a stable per-user location so
-    # `microvm-run` works from anywhere and reuses the same persistent store
-    # overlay instead of littering images wherever it's launched.
     statedir="$HOME/.local/share/microvm"
-    mkdir -p "$statedir"
-    cd "$statedir"
+    pidfile="$statedir/vfkit.pid"
+    logfile="$statedir/vfkit.log"
 
-    # vfkit's serial console is our stdio, but the host tty still generates
-    # signals: Ctrl-C would SIGINT vfkit, whose signal handler gracefully
-    # stops the whole VM. Undefine the signal chars so ^C/^\/^Z are sent to
-    # the guest console (interrupting the process *inside* the VM) instead.
-    # Exit the VM with `poweroff` at its prompt; if the guest ever hangs,
-    # kill vfkit from another terminal.
-    #
-    # No `exec`: the EXIT trap must restore the tty after vfkit returns.
-    saved_tty="$(stty -g)"
-    trap 'stty "$saved_tty"' EXIT
-    stty intr undef quit undef susp undef
-    "$runner/bin/microvm-run"
+    usage() {
+      cat <<'EOF'
+    Usage: microvm <command>
+
+    Commands:
+      start    Start the VM in the background
+      run      Run the VM in the foreground
+      stop     Stop the background VM
+      status   Show VM and OpenCode status
+      logs     Follow the background VM console log
+      help     Show this help
+    EOF
+    }
+
+    running() {
+      [ -r "$pidfile" ] || return 1
+      IFS= read -r pid < "$pidfile"
+      [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || return 1
+      command="$(/bin/ps -p "$pid" -o command= 2>/dev/null)" || return 1
+      case "$command" in
+        *vfkit*|*microvm-run*|*microvm@agent-sandbox*) return 0 ;;
+        *) return 1 ;;
+      esac
+    }
+
+    prepare() {
+      mkdir -p "$statedir"
+      if running; then
+        echo "agent-sandbox is already running (PID $pid)." >&2
+        return 1
+      fi
+      rm -f "$pidfile"
+
+      echo "Building/substituting agent-sandbox micro VM for ${host}..." >&2
+      runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
+        "${flakeRef}#${runnerAttr}")
+      cd "$statedir"
+    }
+
+    case "''${1:-help}" in
+      start)
+        prepare
+        # vfkit's stdio console requires a terminal even when detached.
+        ${lib.getExe' pkgs.coreutils "nohup"} /usr/bin/script -q "$logfile" \
+          "$runner/bin/microvm-run" </dev/null >/dev/null 2>&1 &
+        launcher_pid=$!
+        for ((attempt = 0; attempt < 120; attempt++)); do
+          if running && ${lib.getExe pkgs.curl} --fail --silent \
+            http://${guestAddress}:${toString opencodePort}/global/health >/dev/null; then
+            echo "Started agent-sandbox (PID $pid)." >&2
+            exit 0
+          fi
+          if ! kill -0 "$launcher_pid" 2>/dev/null; then
+            echo "agent-sandbox failed to start; see $logfile" >&2
+            exit 1
+          fi
+          sleep 1
+        done
+        echo "Timed out starting agent-sandbox; see $logfile" >&2
+        exit 1
+        ;;
+      run)
+        prepare
+        saved_tty="$(stty -g)"
+        trap 'stty "$saved_tty"' EXIT
+        stty intr undef quit undef susp undef
+        "$runner/bin/microvm-run"
+        ;;
+      stop)
+        if ! running; then
+          echo "agent-sandbox is not running." >&2
+          rm -f "$pidfile"
+          exit 0
+        fi
+        kill -INT "$pid"
+        for ((attempt = 0; attempt < 30; attempt++)); do
+          running || break
+          sleep 1
+        done
+        if running; then
+          echo "Timed out stopping agent-sandbox (PID $pid)." >&2
+          exit 1
+        fi
+        rm -f "$pidfile"
+        echo "Stopped agent-sandbox." >&2
+        ;;
+      status)
+        if ! running; then
+          echo "agent-sandbox is stopped"
+          exit 1
+        fi
+        if ${lib.getExe pkgs.curl} --fail --silent \
+          http://${guestAddress}:${toString opencodePort}/global/health >/dev/null; then
+          echo "agent-sandbox is running (PID $pid, OpenCode healthy)"
+        else
+          echo "agent-sandbox is running (PID $pid, OpenCode unavailable)"
+        fi
+        ;;
+      logs)
+        mkdir -p "$statedir"
+        touch "$logfile"
+        exec ${lib.getExe' pkgs.coreutils "tail"} -n 200 -F "$logfile"
+        ;;
+      help|-h|--help)
+        usage
+        ;;
+      *)
+        usage >&2
+        exit 2
+        ;;
+    esac
   '';
 in
 {
@@ -79,7 +171,7 @@ in
   '';
 
   config = lib.mkMerge [
-    { environment.systemPackages = [ microvm-run opencode-vm ]; }
+    { environment.systemPackages = [ microvm opencode-vm ]; }
 
     (lib.mkIf cfg.enable {
       nix = {

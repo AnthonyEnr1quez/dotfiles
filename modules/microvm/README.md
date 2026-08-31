@@ -62,8 +62,8 @@ model instead of implying a boundary that doesn't exist.
   other settings shared by the Darwin host and its VM.
 - `hosts/darwin/<host>/darwin.nix` holds macOS-only settings such as GUI apps,
   Homebrew, `launchd`, and system defaults.
-- `darwin.nix` provides the host-side `microvm-run` launcher and opt-in Linux
-  builder.
+- `darwin.nix` provides the host-side `microvm` lifecycle helper and opt-in
+  Linux builder.
 
 ## Host configuration
 
@@ -72,11 +72,10 @@ Each enabled Darwin host has a matching NixOS output:
 - `agent-sandbox-damascus`
 - `agent-sandbox-MacBook-Pro-2`
 
-Import `modules/microvm/darwin.nix` from a host's `darwin.nix` to install
-`microvm-run`. The command builds that host's matching guest. The guest logs in
-as `root` and keeps its hostname as `agent-sandbox`, but receives the host's
-portable packages, environment variables, shell settings, and development
-tools.
+Import `modules/microvm/darwin.nix` from a host's `darwin.nix` to install the
+launchers. They build that host's matching guest. The guest logs in as `root`
+and keeps its hostname as `agent-sandbox`, but receives the host's portable
+packages, environment variables, shell settings, and development tools.
 
 The guest excludes macOS-only configuration. It does not receive GUI apps,
 Homebrew casks, `launchd` settings, macOS system defaults, or host secrets.
@@ -87,13 +86,18 @@ Each VM is `aarch64-linux`. CI builds the enabled guest closures and pushes them
 to Cachix, so you normally run:
 
 ```sh
-microvm-run          # builds/substitutes the VM, then boots it via vfkit
+microvm start        # start in the background
+microvm status       # check the VM and OpenCode server
+microvm logs         # follow the background console log
+microvm stop
+microvm run          # foreground console
 ```
 
-Exit the VM with `poweroff` at its shell prompt.
+Run `microvm -h` for the command list. Exit a foreground VM with `poweroff` at
+its shell prompt.
 
 To (re)build a VM locally, temporarily set `microvm.linuxBuilder.enable = true`
-in the host's `darwin.nix`, rebuild and switch, run `microvm-run`, then set it
+in the host's `darwin.nix`, rebuild and switch, run `microvm run`, then set it
 back to `false`.
 
 State locations on the host (per-user, resolved at launch via `$HOME`):
@@ -104,6 +108,8 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   is otherwise stateless (tmpfs root; config comes from the Nix closure), but
   opencode sessions/history (`~/.local/share/opencode`) are symlinked onto this
   volume so they survive `poweroff`.
+- `~/.local/share/microvm/vfkit.pid` and `vfkit.log` — background process state
+  and console output.
 
 Note: opencode's `auth.json` (API credentials) lives in that persisted state
 — same protection class as the host's own `~/.local/share/opencode`, but be
@@ -123,12 +129,14 @@ without it.
 
 ## Workflow
 
-There isn't one — that's the point. Boot the VM, `cd ~/projects/<repo>`, start
-an agent session (one session per repo). On the host, keep the same directory
-open in your editor: you see edits live, you intervene and edit alongside the
-agent, and finished work is already in your repo on whatever branch the agent
-used. Commit, branch, and push with your normal git habits (pushes happen
-host-side — the VM deliberately has no credentials).
+Start the VM with `microvm start`, change to a directory below `~/projects`,
+and run `opencode-vm`. The host TUI attaches to the OpenCode server in the VM
+with the corresponding `/root/projects` directory.
+
+Keep the same directory open in your host editor: you see edits live, intervene
+alongside the agent, and finished work is already in the host repo. Commit,
+branch, and push with normal git habits (pushes happen host-side — the VM
+deliberately has no credentials).
 
 The VM's git identity can commit but cannot sign (no keys in the VM); re-sign
 on the host if you need signed history.
