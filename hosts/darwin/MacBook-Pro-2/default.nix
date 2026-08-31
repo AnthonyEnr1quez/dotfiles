@@ -1,6 +1,7 @@
 { config, pkgs, lib, ... }:
 let
   mfPath = "${config.user.home}/Projects/moov/mf";
+  libxml2PkgConfigPath = "${pkgs.libxml2_13.dev}/lib/pkgconfig";
 
   goland = pkgs.jetbrains.goland.overrideAttrs (_: rec {
     version = "2026.2.1.1";
@@ -60,6 +61,9 @@ let
   ];
 in
 {
+  # GUI apps do not inherit Home Manager's shell session variables.
+  launchd.user.envVariables.PKG_CONFIG_PATH = libxml2PkgConfigPath;
+
   hm = {
     mcp.enable = true;
 
@@ -67,7 +71,7 @@ in
       sessionVariables = {
         BUMPER_PD_PATH = "/Users/anthony.enriquez/Projects/moov/mf/platform-dev";
         BUMPER_INFRA_PATH = "/Users/anthony.enriquez/Projects/moov/mf/infra";
-        PKG_CONFIG_PATH = "${pkgs.libxml2_13.dev}/lib/pkgconfig";
+        PKG_CONFIG_PATH = libxml2PkgConfigPath;
       };
 
       packages = with pkgs; [
@@ -90,7 +94,6 @@ in
         sift
         oq
       ] ++ scriptPackages;
-
     };
 
     programs = {
