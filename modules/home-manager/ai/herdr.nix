@@ -29,11 +29,17 @@ in
       };
     };
 
-    # herdr's opencode integration, taken from the same source revision as the
-    # binary instead of `herdr integration install`, which would write it
-    # imperatively. Only linked when opencode is enabled.
-    xdg.configFile."opencode/plugins/herdr-agent-state.js" = lib.mkIf config.opencode.enable {
-      source = "${herdr.src}/src/integration/assets/opencode/herdr-agent-state.js";
+    # herdr's opencode integrations, taken from the same source revision as
+    # the binary instead of `herdr integration install`, which would write
+    # them imperatively. Only linked when opencode is enabled.
+    xdg.configFile = lib.mkIf config.opencode.enable {
+      "opencode/plugins/herdr-agent-state.js".source =
+        "${herdr.src}/src/integration/assets/opencode/herdr-agent-state.js";
+      "opencode/herdr-tui-session.js".source =
+        "${herdr.src}/src/integration/assets/opencode/herdr-tui-session.js";
+      "opencode/tui.jsonc".text = builtins.toJSON {
+        plugin = [ "./herdr-tui-session.js" ];
+      };
     };
   };
 }
