@@ -67,6 +67,7 @@ let
       start    Start the VM in the background
       run      Run the VM in the foreground
       stop     Stop the background VM
+      restart  Stop and start the VM
       status   Show VM and OpenCode status
       logs     Follow the background VM console log
       help     Show this help
@@ -157,6 +158,10 @@ let
         fi
         rm -f "$pidfile"
         echo "Stopped agent-sandbox." >&2
+        ;;
+      restart)
+        "$0" stop
+        exec "$0" start
         ;;
       status)
         if ! running; then

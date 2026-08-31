@@ -90,6 +90,7 @@ microvm start        # start in the background
 microvm status       # check the VM and OpenCode server
 microvm logs         # follow the background console log
 microvm stop
+microvm restart      # stop and start again
 microvm run          # foreground console
 ```
 
