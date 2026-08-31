@@ -166,19 +166,18 @@
         };
       };
     }
-    # The `//` operator takes the union of its two operands. So we are combining multiple attribute sets into one final, big flake.
     //
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
       in
       {
-        devShells = import ./shells { inherit pkgs; };
         formatter = pkgs.nixpkgs-fmt;
       }
     )
     //
     {
+
       # The aarch64-darwin vfkit runner (declaredRunner) pulls in one extra
       # aarch64-linux path — the guest's closureInfo (regInfo) — that is NOT in
       # `system.build.toplevel`. CI builds this on the arm-linux runner so it
