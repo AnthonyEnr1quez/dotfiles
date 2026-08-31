@@ -13,6 +13,7 @@
         key = "gh_hosts";
         path = "${config.user.home}/.config/gh/hosts.yml";
       };
+      secrets.anthropic-api-key.key = "anthropic_api_key";
     };
   };
 }

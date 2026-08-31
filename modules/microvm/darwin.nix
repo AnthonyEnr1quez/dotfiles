@@ -61,11 +61,15 @@ let
     secret_file="${flakeRef}/secrets/personal.sops.yaml"
     if [ -f "$secret_file" ]; then
       agent_secrets_dir="$(mktemp -d "''${TMPDIR:-/tmp}/agent-secrets.XXXXXX")"
+      extract_secret() {
+        SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}" \
+          ${lib.getExe pkgs.sops} decrypt --extract "[\"$1\"]" "$secret_file" > "$2"
+        chmod 0400 "$2"
+      }
       mkdir "$agent_secrets_dir/gh"
-      SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}" \
-        ${lib.getExe pkgs.sops} decrypt --extract '["gh_hosts"]' "$secret_file" > "$agent_secrets_dir/gh/hosts.yml"
+      extract_secret "gh_hosts" "$agent_secrets_dir/gh/hosts.yml"
+      extract_secret "anthropic_api_key" "$agent_secrets_dir/anthropic_api_key"
       printf '%s\n' 'version: "1"' > "$agent_secrets_dir/gh/config.yml"
-      chmod 0400 "$agent_secrets_dir/gh/hosts.yml"
     else
       echo "No agent GitHub credential configured; starting without GitHub authentication." >&2
     fi
