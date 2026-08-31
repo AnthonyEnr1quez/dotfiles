@@ -1,1 +1,11 @@
 /result
+
+# Never stage plaintext secret exports or editor backups.
+/secrets/**/*.dec
+/secrets/**/*.decrypted
+/secrets/**/*.decrypted.*
+/secrets/**/*.plaintext
+/secrets/**/*.plaintext.*
+/secrets/**/*~
+/secrets/**/*.swp
+/secrets/**/*.tmp
