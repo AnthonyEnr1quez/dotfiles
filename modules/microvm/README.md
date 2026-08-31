@@ -11,7 +11,8 @@ Based on <https://abhinavsarkar.net/notes/2026-microvm-nix/>.
 The agent runs **inside** the VM. Everything it *executes* — builds, tests,
 arbitrary commands, dependency code — is caged. It cannot reach secrets
 (`~/.ssh`, tokens, keychains), the rest of the host filesystem, or the system;
-networking is NAT-only (outbound only; the host cannot connect into the VM).
+networking is NAT-only, with only the OpenCode port allowed through the guest
+firewall for host attachment.
 
 This closes the enforcement gap of agent-level permission configs: those gate
 what the agent *asks* to do, but anything it legitimately shells out to (a
