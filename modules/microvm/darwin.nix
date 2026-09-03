@@ -20,8 +20,7 @@ let
   opencodePort = 4096;
   runnerAttr = "nixosConfigurations.agent-sandbox-${host}.config.microvm.declaredRunner";
   opencodeAliases = {
-    opencode = "opencode-vm";
-    opencode-local = lib.getExe pkgs.opencode;
+    opencode-vm = "opencode-vm";
   };
 
   opencode-vm = pkgs.writeShellScriptBin "opencode-vm" ''

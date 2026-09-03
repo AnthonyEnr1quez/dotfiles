@@ -1,6 +1,9 @@
 { pkgs, ... }:
 {
-  imports = [ ../../../modules/microvm/darwin.nix ];
+  imports = [
+    ../../../modules/microvm/darwin.nix
+    ../../../modules/agent-sandbox/darwin.nix
+  ];
 
   hm = {
     firefox = {

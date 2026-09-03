@@ -9,7 +9,12 @@ let
   });
 in
 {
-  imports = [ ../../../modules/microvm/darwin.nix ];
+  imports = [
+    ../../../modules/microvm/darwin.nix
+    ../../../modules/agent-sandbox/darwin.nix
+  ];
+
+  agentSandbox.projectsDirectory = "${config.user.home}/Projects";
 
   # GUI apps do not inherit Home Manager's shell session variables.
   launchd.user.envVariables.PKG_CONFIG_PATH =

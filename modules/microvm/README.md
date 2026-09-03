@@ -6,9 +6,9 @@ Virtualization framework) using [microvm.nix](https://github.com/microvm-nix/mic
 
 Based on <https://abhinavsarkar.net/notes/2026-microvm-nix/>.
 
-## Why
+## MicroVM mode
 
-The agent runs **inside** the VM. Everything it *executes* — builds, tests,
+`opencode-vm` runs the agent **inside** the VM. Everything it *executes* — builds, tests,
 arbitrary commands, dependency code — is caged. It cannot reach secrets
 (`~/.ssh`, tokens, keychains), the rest of the host filesystem, or the system;
 networking is NAT-only, with only the OpenCode port allowed through the guest
@@ -132,15 +132,18 @@ without it.
 
 ## Workflow
 
-From a directory below `~/projects`, run `opencode`. It starts the VM when
-needed and attaches the host TUI to its OpenCode server with the corresponding
-`/root/projects` directory. `opencode-vm` is an explicit alias for the same
-remote behavior; use `opencode-local` to run OpenCode directly on macOS.
+From a directory below the configured projects directory, run `opencode`. It
+runs OpenCode locally through `agent-sandbox.nix`: the launch directory is
+read-write, the projects directory is read-only, and only OpenCode state and
+Go caches are additionally writable. `opencode-vm` retains the previous
+hardened workflow: it starts the VM when needed and attaches the host TUI to
+its OpenCode server with the corresponding `/root/projects` directory.
+`opencode-local` runs OpenCode on macOS without sandboxing.
 
 Keep the same directory open in your host editor: you see edits live, intervene
 alongside the agent, and finished work is already in the host repo. Commit,
-branch, and push with normal git habits (pushes happen host-side — the VM
-deliberately has no credentials).
+branch, and push with normal git habits. VM-mode pushes happen host-side because
+the guest deliberately has no credentials.
 
 The VM's git identity can commit but cannot sign (no keys in the VM); re-sign
 on the host if you need signed history.
