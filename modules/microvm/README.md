@@ -108,15 +108,26 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   overlay (persists across runs).
 - `~/.local/share/microvm/agent-state.img` — persistent agent state. The VM
   is otherwise stateless (tmpfs root; config comes from the Nix closure), but
-  opencode sessions/history (`~/.local/share/opencode`) are symlinked onto this
-  volume so they survive `poweroff`.
+  OpenCode sessions/history (`~/.local/share/opencode`) and the VM's gcloud
+  configuration (`~/.config/gcloud`) are symlinked onto this volume so they
+  survive `poweroff`. The MacBook-Pro-2 host and work VM declare their
+  `us-docker.pkg.dev` gcloud credential-helper mapping at activation; the
+  Darwin host also selects its OrbStack Docker context.
+  The VM-specific GitHub SSH identity (`~/.ssh/id_ed25519_github` and its
+  public key) and `~/.ssh/known_hosts` are also persisted individually; SSH
+  configuration remains ephemeral.
+- `~/.local/share/microvm/dev-state.img` — persistent development scratch
+  space and caches. It backs `TMPDIR`, `XDG_CACHE_HOME`, and Go's module and
+  build caches, plus Docker images, containers, and volumes, so development
+  workloads do not exhaust the tmpfs root.
 - `~/.local/share/microvm/vfkit.pid` and `vfkit.log` — background process state
   and console output.
 - `~/.local/share/microvm/runner` — GC root for the running VM closure.
 
-Note: opencode's `auth.json` (API credentials) lives in that persisted state
-— same protection class as the host's own `~/.local/share/opencode`, but be
-aware the "no secrets in the VM" property now excludes the agent's own login.
+Note: OpenCode's `auth.json` (API credentials) and gcloud's refresh credentials
+live in the persisted agent state, as does the VM-specific GitHub private key.
+They are separate from the host's credential stores, but the "no secrets in the
+VM" property excludes these VM-specific logins and key.
 
 ## Shares
 
@@ -139,8 +150,9 @@ remote behavior; use `opencode-local` to run OpenCode directly on macOS.
 
 Keep the same directory open in your host editor: you see edits live, intervene
 alongside the agent, and finished work is already in the host repo. Commit,
-branch, and push with normal git habits (pushes happen host-side — the VM
-deliberately has no credentials).
+branch, and push with normal git habits. The VM has no host SSH credentials, so
+Git pushes normally happen host-side unless its VM-specific GitHub key is
+configured for repository access.
 
 The VM's git identity can commit but cannot sign (no keys in the VM); re-sign
 on the host if you need signed history.

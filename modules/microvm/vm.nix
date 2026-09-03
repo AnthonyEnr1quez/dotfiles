@@ -47,6 +47,14 @@
         mountPoint = "/var/lib/agent-state";
         size = 10240; # 10 GiB
       }
+      # Persistent development state for compiler/test scratch space and tool
+      # caches. Keeping it separate from agent state prevents either workload
+      # from exhausting the other's storage budget.
+      {
+        image = "dev-state.img";
+        mountPoint = "/var/lib/dev-state";
+        size = 40960; # 40 GiB
+      }
     ];
 
     shares = [
@@ -105,9 +113,10 @@
   networking.interfaces.eth0.useDHCP = true;
   networking.firewall.allowedTCPPorts = [ 4096 ];
 
-  # Persist agent state on the agent-state volume: create the backing dirs
-  # and symlink it into root's tmpfs home. tmpfiles runs after local-fs.target
-  # (volume mounted) and before home-manager activation writes opencode state.
+  # Persist VM-specific credentials and agent state on the agent-state volume:
+  # create the backing dirs and symlink them into root's tmpfs home. tmpfiles
+  # runs after local-fs.target (volume mounted) and before home-manager
+  # activation writes application state.
   #
   # Deliberately a static list: which paths persist is a property of this VM,
   # not of the apps' home-manager config.
@@ -118,9 +127,34 @@
         "L+ ${target} - - - - /var/lib/agent-state/${name}"
       ];
     in
-    [ "d /nix/.rw-store/nix-build 0755 root root -" ]
-    # opencode: sessions/history/db
-    ++ persist "opencode" "/root/.local/share/opencode";
+    [
+      "d /nix/.rw-store/nix-build 0755 root root -"
+      "d /var/lib/dev-state/tmp 0700 root root -"
+      "d /var/lib/dev-state/tmp/go 0700 root root -"
+      "d /var/lib/dev-state/cache 0700 root root -"
+      "d /var/lib/dev-state/go 0700 root root -"
+      "d /var/lib/dev-state/docker 0710 root root -"
+      "d /root/.ssh 0700 root root -"
+      "d /var/lib/agent-state/github-ssh 0700 root root -"
+      "L+ /root/.ssh/id_ed25519_github - - - - /var/lib/agent-state/github-ssh/id_ed25519_github"
+      "L+ /root/.ssh/id_ed25519_github.pub - - - - /var/lib/agent-state/github-ssh/id_ed25519_github.pub"
+      "L+ /root/.ssh/known_hosts - - - - /var/lib/agent-state/github-ssh/known_hosts"
+    ]
+    # opencode: sessions/history/db; gcloud: configs and refresh credentials;
+    # github-ssh: VM-specific identity key only
+    ++ persist "opencode" "/root/.local/share/opencode"
+    ++ persist "gcloud" "/root/.config/gcloud";
+
+  # Keep development tools from filling the tmpfs root. These apply to login
+  # shells; the OpenCode service receives the same values explicitly below.
+  hm.home.sessionVariables = {
+    TMPDIR = "/var/lib/dev-state/tmp";
+    XDG_CACHE_HOME = "/var/lib/dev-state/cache";
+    GOPATH = lib.mkForce "/var/lib/dev-state/go";
+    GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
+    GOCACHE = "/var/lib/dev-state/cache/go-build";
+    GOTMPDIR = "/var/lib/dev-state/tmp/go";
+  };
 
   # Big gotcha workaround: the VM's root FS is a tmpfs (RAM), and Nix's build
   # sandbox is created on the root FS by default. Disable the sandbox and point
@@ -133,17 +167,18 @@
 
   # System-level build toolchain (used by Go/cgo and general dev work).
   environment.systemPackages = with pkgs; [
+    bc
     gnumake
     gcc
   ];
 
   # Rootful Docker for the agent (root is the VM's only user, so there's no
-  # privilege-separation benefit to rootless). /var/lib/docker lives on the
-  # tmpfs root like the rest of the VM: images/containers are ephemeral and
-  # count against the VM's RAM budget, matching the VM's disposable,
-  # stateless-by-default design (see agent-state persistence above for the
-  # exception).
-  virtualisation.docker.enable = true;
+  # privilege-separation benefit to rootless). Images, containers, and volumes
+  # use the disk-backed development state instead of exhausting root tmpfs.
+  virtualisation.docker = {
+    enable = true;
+    daemon.settings.data-root = "/var/lib/dev-state/docker";
+  };
 
   # Treat the VM like another machine: reuse the shared system config
   # (modules/common.nix), which bootstraps home-manager and pulls in the full
@@ -181,6 +216,12 @@
     environment = {
       HOME = "/root";
       PATH = lib.mkForce "/etc/profiles/per-user/root/bin:/run/current-system/sw/bin";
+      TMPDIR = "/var/lib/dev-state/tmp";
+      XDG_CACHE_HOME = "/var/lib/dev-state/cache";
+      GOPATH = "/var/lib/dev-state/go";
+      GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
+      GOCACHE = "/var/lib/dev-state/cache/go-build";
+      GOTMPDIR = "/var/lib/dev-state/tmp/go";
     };
 
     serviceConfig = {

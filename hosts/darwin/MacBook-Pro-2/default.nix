@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 let
   projectsPath =
     if pkgs.stdenvNoCC.hostPlatform.isDarwin then
@@ -89,6 +89,17 @@ in
     };
 
     programs = {
+      # This module is also imported by the work MicroVM. Both use gcloud for
+      # Artifact Registry, while only the macOS host selects OrbStack.
+      docker-cli = {
+        enable = true;
+        settings = {
+          credHelpers."us-docker.pkg.dev" = "gcloud";
+        } // lib.optionalAttrs pkgs.stdenvNoCC.hostPlatform.isDarwin {
+          currentContext = "orbstack";
+        };
+      };
+
       zsh = {
         cdpath = [ mfPath ];
       };
