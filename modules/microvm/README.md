@@ -6,6 +6,13 @@ Virtualization framework) using [microvm.nix](https://github.com/microvm-nix/mic
 
 Based on <https://abhinavsarkar.net/notes/2026-microvm-nix/>.
 
+### Additional References
+- https://devctrl.blog/posts/maximum-security-confinement-for-your-ai-agents-with-microvm-nix/
+- https://buduroiu.com/blog/openclaw-microvm/
+- https://github.com/razvanz/nixbox
+- https://kraftnix.dev/blog/why-you-should-use-microvm-nix/
+- https://github.com/archie-judd/agent-sandbox.nix
+
 ## Why
 
 The agent runs **inside** the VM. Everything it *executes* — builds, tests,
