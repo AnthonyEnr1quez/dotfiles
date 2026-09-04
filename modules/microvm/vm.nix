@@ -19,6 +19,8 @@
     hypervisor = "vfkit";
     vcpu = 4;
     mem = 8192; # 8 GiB
+    # No swap by design. If large builds or containers are OOM-killed, add a
+    # small disk-backed swap device rather than placing swap on the tmpfs root.
     vfkit.extraArgs = [ "--pidfile" "vfkit.pid" ];
 
     # Disable the vfkit control socket. With a socket, microvm.nix wraps the
@@ -110,7 +112,7 @@
     neededForBoot = false;
   };
 
-  networking.interfaces.eth0.useDHCP = true;
+  networking.useDHCP = true;
   networking.firewall.allowedTCPPorts = [ 4096 ];
 
   # Persist VM-specific credentials and agent state on the agent-state volume:
@@ -163,6 +165,20 @@
     sandbox = false;
     build-dir = "/nix/.rw-store/nix-build";
     experimental-features = [ "nix-command" "flakes" ];
+    # NOTE: Keep these in sync with flake.nix nixConfig and nix.settings in
+    # modules/darwin/default.nix.
+    substituters = [
+      "https://cache.nixos.org"
+      "https://nix-community.cachix.org"
+      "https://catppuccin.cachix.org"
+      "https://anthonyenr1quez.cachix.org"
+    ];
+    trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "catppuccin.cachix.org-1:noG/4HkbhJb+lUAdKrph6LaozJvAeEEZj4N732IysmU="
+      "anthonyenr1quez.cachix.org-1:Gclb+0ZEVse0quS5IhHiYRsb9QgZ7oSPRfKPNHOl3eI="
+    ];
   };
 
   # System-level build toolchain (used by Go/cgo and general dev work).
@@ -204,6 +220,21 @@
     sandboxed = true;
     server = true;
   };
+  # The credential symlinks under /root are denied by the shared OpenCode
+  # policy. Deny their VM-specific backing paths too, so direct paths cannot
+  # bypass those file-tool guards.
+  hm.programs.opencode.settings.permission = {
+    read = {
+      "/var/lib/agent-state/gcloud/**" = "deny";
+      "/var/lib/agent-state/github-ssh/**" = "deny";
+    };
+    external_directory = {
+      "/var/lib/agent-state/gcloud" = "deny";
+      "/var/lib/agent-state/gcloud/*" = "deny";
+      "/var/lib/agent-state/github-ssh" = "deny";
+      "/var/lib/agent-state/github-ssh/*" = "deny";
+    };
+  };
   hm.herdr.enable = false;
   hm.mcp.enable = true;
 
@@ -222,6 +253,7 @@
       GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
       GOCACHE = "/var/lib/dev-state/cache/go-build";
       GOTMPDIR = "/var/lib/dev-state/tmp/go";
+      OPENCODE_DISABLE_PROJECT_CONFIG = "1";
     };
 
     serviceConfig = {

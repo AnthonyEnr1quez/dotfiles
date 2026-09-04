@@ -20,7 +20,8 @@
     "${config.user.name}"
   ];
 
-  # NOTE: Keep these in sync with flake.nix nixConfig
+  # NOTE: Keep these in sync with flake.nix nixConfig and nix.settings in
+  # modules/microvm/vm.nix.
   nix.settings = {
     substituters = [
       "https://cache.nixos.org"

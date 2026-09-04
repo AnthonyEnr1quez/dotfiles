@@ -1,7 +1,8 @@
 {
   description = "dotfiles";
 
-  # NOTE: Keep these in sync with modules/darwin/default.nix nix.settings
+  # NOTE: Keep these in sync with nix.settings in modules/darwin/default.nix
+  # and modules/microvm/vm.nix.
   nixConfig = {
     substituters = [
       "https://cache.nixos.org"
