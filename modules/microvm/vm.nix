@@ -256,7 +256,7 @@
     description = "OpenCode server";
     wantedBy = [ "multi-user.target" ];
     wants = [ "network-online.target" ];
-    after = [ "network-online.target" "home-manager-root.service" ];
+    after = [ "network-online.target" "home-manager-root.service" "run-host-secrets.mount" ];
 
     environment = {
       HOME = "/root";
@@ -271,7 +271,8 @@
     };
 
     serviceConfig = {
-      ExecStart = "/etc/profiles/per-user/root/bin/opencode serve";
+      EnvironmentFile = "/run/host-secrets/opencode.env";
+      ExecStart = "${lib.getExe pkgs.opencode} serve";
       Restart = "on-failure";
       RestartSec = 2;
       WorkingDirectory = "/root";

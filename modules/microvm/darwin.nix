@@ -20,70 +20,6 @@ let
   opencodePort = 4096;
   runnerAttr = "nixosConfigurations.agent-sandbox-${host}.config.microvm.declaredRunner";
 
-  microvm-run = pkgs.writeShellScriptBin "microvm-run" ''
-    set -euo pipefail
-
-    agent_secrets_dir=""
-    saved_tty=""
-    cleanup() {
-      if [ -n "$agent_secrets_dir" ]; then
-        rm -rf -- "$agent_secrets_dir"
-      fi
-      if [ -n "$saved_tty" ]; then
-        stty "$saved_tty"
-      fi
-    }
-    trap cleanup EXIT
-    trap 'exit 1' HUP INT TERM
-
-    if [ -n "''${MICROVM_RUNNER:-}" ]; then
-      runner="$MICROVM_RUNNER"
-    else
-      echo "Building agent-sandbox micro VM for ${host} (this needs the Linux builder)..." >&2
-      runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
-        "${flakeRef}#${runnerAttr}")
-    fi
-
-    # vfkit creates the VM's disk image(s) in the current directory (the image
-    # paths in vm.nix are relative). Pin them to a stable per-user location so
-    # `microvm-run` works from anywhere and reuses the same persistent store
-    # overlay instead of littering images wherever it's launched.
-    statedir="$HOME/.local/share/microvm"
-    mkdir -p "$statedir"
-    cd "$statedir"
-
-    # vfkit's serial console is our stdio, but the host tty still generates
-    # signals: Ctrl-C would SIGINT vfkit, whose signal handler gracefully
-    # stops the whole VM. Undefine the signal chars so ^C/^\/^Z are sent to
-    # the guest console (interrupting the process *inside* the VM) instead.
-    # Exit the VM with `poweroff` at its prompt; if the guest ever hangs,
-    # kill vfkit from another terminal.
-    #
-    # No `exec`: the EXIT trap must restore the tty after vfkit returns.
-    if [ -t 0 ]; then
-      saved_tty="$(stty -g)"
-      stty intr undef quit undef susp undef
-    fi
-
-    secret_file="${flakeRef}/secrets/personal.sops.yaml"
-    if [ -f "$secret_file" ]; then
-      agent_secrets_dir="$(mktemp -d "''${TMPDIR:-/tmp}/agent-secrets.XXXXXX")"
-      extract_secret() {
-        SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}" \
-          ${lib.getExe pkgs.sops} decrypt --extract "[\"$1\"]" "$secret_file" > "$2"
-        chmod 0400 "$2"
-      }
-      mkdir "$agent_secrets_dir/gh"
-      extract_secret "gh_hosts" "$agent_secrets_dir/gh/hosts.yml"
-      extract_secret "anthropic_api_key" "$agent_secrets_dir/anthropic_api_key"
-      printf '%s\n' 'version: "1"' > "$agent_secrets_dir/gh/config.yml"
-    else
-      echo "No agent GitHub credential configured; starting without GitHub authentication." >&2
-    fi
-
-    AGENT_SECRETS_DIR="$agent_secrets_dir" "$runner/bin/microvm-run"
-  '';
-
   opencodeAliases = {
     opencode = "opencode-vm";
     opencode-local = lib.getExe pkgs.opencode;
@@ -155,6 +91,46 @@ let
         http://${guestAddress}:${toString opencodePort}/global/health >/dev/null
     }
 
+    run_runner() {
+      runner="$1"
+      agent_secrets_dir=""
+      saved_tty=""
+      cleanup() {
+        if [ -n "$agent_secrets_dir" ]; then
+          rm -rf -- "$agent_secrets_dir"
+        fi
+        if [ -n "$saved_tty" ]; then
+          stty "$saved_tty"
+        fi
+      }
+      trap cleanup EXIT
+      trap 'exit 1' HUP INT TERM
+
+      if [ -t 0 ]; then
+        saved_tty="$(stty -g)"
+        stty intr undef quit undef susp undef
+      fi
+
+      secret_file="${flakeRef}/secrets/personal.sops.yaml"
+      if [ -f "$secret_file" ]; then
+        agent_secrets_dir="$(mktemp -d "''${TMPDIR:-/tmp}/agent-secrets.XXXXXX")"
+        decrypt_secret() {
+          SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}" \
+            ${lib.getExe pkgs.sops} decrypt --extract "[\"$1\"]" "$secret_file"
+        }
+        mkdir "$agent_secrets_dir/gh"
+        decrypt_secret "gh_hosts" > "$agent_secrets_dir/gh/hosts.yml"
+        printf 'ANTHROPIC_API_KEY=' > "$agent_secrets_dir/opencode.env"
+        decrypt_secret "anthropic_api_key" >> "$agent_secrets_dir/opencode.env"
+        printf '%s\n' 'version: "1"' > "$agent_secrets_dir/gh/config.yml"
+        chmod 0400 "$agent_secrets_dir/gh/hosts.yml" "$agent_secrets_dir/opencode.env"
+      else
+        echo "No agent credentials configured; starting without GitHub or Anthropic authentication." >&2
+      fi
+
+      AGENT_SECRETS_DIR="$agent_secrets_dir" "$runner/bin/microvm-run"
+    }
+
     prepare() {
       mkdir -p "$statedir"
       if running; then
@@ -183,7 +159,7 @@ let
         prepare
         # vfkit's stdio console requires a terminal even when detached.
         ${lib.getExe' pkgs.coreutils "nohup"} /usr/bin/script -q "$logfile" \
-          /usr/bin/env "MICROVM_RUNNER=$runner" "${microvm-run}/bin/microvm-run" \
+          "$0" _run "$runner" \
           </dev/null >/dev/null 2>&1 &
         launcher_pid=$!
         for ((attempt = 0; attempt < 120; attempt++)); do
@@ -202,7 +178,11 @@ let
         ;;
       run)
         prepare
-        MICROVM_RUNNER="$runner" "${microvm-run}/bin/microvm-run"
+        run_runner "$runner"
+        ;;
+      _run)
+        [ "$#" -eq 2 ] || exit 2
+        run_runner "$2"
         ;;
       stop)
         if ! running; then

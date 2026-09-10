@@ -26,11 +26,7 @@ let
 
   inherit (lib) mkIf mkEnableOption;
 
-  anthropicApiKeyFile =
-    if cfg.sandboxed then
-      "/run/host-secrets/anthropic_api_key"
-    else
-      config.sops.secrets.anthropic-api-key.path;
+  anthropicApiKeyFile = config.sops.secrets.anthropic-api-key.path;
 
   # Flip an otherwise-"ask" bash/skill/external-directory rule to "allow"
   # when opencode.sandboxed is set (see options.opencode.sandboxed above).
@@ -62,7 +58,7 @@ in
       opencode = {
         enable = true;
         enableMcpIntegration = true;
-        package = pkgs.writeShellScriptBin "opencode" ''
+        package = mkIf (!cfg.sandboxed) (pkgs.writeShellScriptBin "opencode" ''
           set -euo pipefail
           key_file=${lib.escapeShellArg anthropicApiKeyFile}
           if [[ ! -r "$key_file" ]]; then
@@ -71,7 +67,7 @@ in
           fi
           export ANTHROPIC_API_KEY="$(<"$key_file")"
           exec ${lib.getExe pkgs.opencode} "$@"
-        '';
+        '');
 
         skills = {
           alloydb-basics = "${google-skills}/skills/cloud/alloydb-basics";
