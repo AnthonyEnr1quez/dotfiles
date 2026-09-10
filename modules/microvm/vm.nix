@@ -287,8 +287,6 @@
     tag.gpgSign = lib.mkForce false;
   };
 
-  hm.programs.gh.runtimeConfigDir = "/run/host-secrets/gh";
-
   # Exit the sandbox by running `poweroff` at its shell prompt.
 
   system.stateVersion = "26.05";

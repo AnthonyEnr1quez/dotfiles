@@ -122,6 +122,7 @@ let
         decrypt_secret "gh_hosts" > "$agent_secrets_dir/gh/hosts.yml"
         printf 'ANTHROPIC_API_KEY=' > "$agent_secrets_dir/opencode.env"
         decrypt_secret "anthropic_api_key" >> "$agent_secrets_dir/opencode.env"
+        printf '%s\n' 'GH_CONFIG_DIR=/run/host-secrets/gh' >> "$agent_secrets_dir/opencode.env"
         printf '%s\n' 'version: "1"' > "$agent_secrets_dir/gh/config.yml"
         chmod 0400 "$agent_secrets_dir/gh/hosts.yml" "$agent_secrets_dir/opencode.env"
       else
