@@ -271,7 +271,7 @@
     };
 
     serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.opencode} serve";
+      ExecStart = "/etc/profiles/per-user/root/bin/opencode serve";
       Restart = "on-failure";
       RestartSec = 2;
       WorkingDirectory = "/root";

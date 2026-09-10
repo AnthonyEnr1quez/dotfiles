@@ -36,9 +36,13 @@ let
     trap cleanup EXIT
     trap 'exit 1' HUP INT TERM
 
-    echo "Building agent-sandbox micro VM for ${host} (this needs the Linux builder)..." >&2
-    runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
-      "${flakeRef}#${runnerAttr}")
+    if [ -n "''${MICROVM_RUNNER:-}" ]; then
+      runner="$MICROVM_RUNNER"
+    else
+      echo "Building agent-sandbox micro VM for ${host} (this needs the Linux builder)..." >&2
+      runner=$(${lib.getExe pkgs.nix} build --no-link --print-out-paths \
+        "${flakeRef}#${runnerAttr}")
+    fi
 
     # vfkit creates the VM's disk image(s) in the current directory (the image
     # paths in vm.nix are relative). Pin them to a stable per-user location so
@@ -56,8 +60,10 @@ let
     # kill vfkit from another terminal.
     #
     # No `exec`: the EXIT trap must restore the tty after vfkit returns.
-    saved_tty="$(stty -g)"
-    stty intr undef quit undef susp undef
+    if [ -t 0 ]; then
+      saved_tty="$(stty -g)"
+      stty intr undef quit undef susp undef
+    fi
 
     secret_file="${flakeRef}/secrets/personal.sops.yaml"
     if [ -f "$secret_file" ]; then
@@ -177,7 +183,8 @@ let
         prepare
         # vfkit's stdio console requires a terminal even when detached.
         ${lib.getExe' pkgs.coreutils "nohup"} /usr/bin/script -q "$logfile" \
-          "$runner/bin/microvm-run" </dev/null >/dev/null 2>&1 &
+          /usr/bin/env "MICROVM_RUNNER=$runner" "${microvm-run}/bin/microvm-run" \
+          </dev/null >/dev/null 2>&1 &
         launcher_pid=$!
         for ((attempt = 0; attempt < 120; attempt++)); do
           if running && healthy; then
@@ -195,10 +202,7 @@ let
         ;;
       run)
         prepare
-        saved_tty="$(stty -g)"
-        trap 'stty "$saved_tty"' EXIT
-        stty intr undef quit undef susp undef
-        "$runner/bin/microvm-run"
+        MICROVM_RUNNER="$runner" "${microvm-run}/bin/microvm-run"
         ;;
       stop)
         if ! running; then
