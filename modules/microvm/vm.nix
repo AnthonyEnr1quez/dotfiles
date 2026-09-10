@@ -4,24 +4,10 @@
 # (Apple Virtualization framework). See:
 # https://abhinavsarkar.net/notes/2026-microvm-nix/
 #
-# Networking note: vfkit only supports user-mode (NAT) networking. The VM can
-# reach the host/internet outbound, but the host cannot initiate connections
-# into the VM.
+# Networking note: vfkit only supports user-mode (NAT) networking. It does not
+# forward localhost ports, so host commands use the guest's conventional
+# 192.168.64.2 DHCP address.
 { lib, pkgs, config, host, ... }:
-let
-  # Terminfo entries the VM can actually resolve. The VM runs from the host's
-  # /nix/store, which sits on case-insensitive APFS: Nix's darwin case hack
-  # renames terminfo's case-colliding dirs (x/ collides with X/ and becomes
-  # "x~nix~case~hack~1"), so the guest can't look up TERM=xterm-256color (what
-  # herdr sets for its panes). This package contains only lowercase dirs — no
-  # collisions, so the case hack leaves it alone and the guest sees it intact.
-  vm-terminfo = pkgs.runCommand "vm-terminfo" { } ''
-    mkdir -p $out/share/terminfo/{x,t,s}
-    cp -L ${pkgs.ncurses}/share/terminfo/x/xterm* $out/share/terminfo/x/
-    cp -L ${pkgs.ncurses}/share/terminfo/t/tmux* $out/share/terminfo/t/
-    cp -L ${pkgs.ncurses}/share/terminfo/s/screen* $out/share/terminfo/s/
-  '';
-in
 {
   imports = [ ../common.nix ]
     ++ lib.optional (host != null) (../../hosts/darwin + "/${host}");
@@ -33,6 +19,9 @@ in
     hypervisor = "vfkit";
     vcpu = 4;
     mem = 8192; # 8 GiB
+    # No swap by design. If large builds or containers are OOM-killed, add a
+    # small disk-backed swap device rather than placing swap on the tmpfs root.
+    vfkit.extraArgs = [ "--pidfile" "vfkit.pid" ];
 
     # Disable the vfkit control socket. With a socket, microvm.nix wraps the
     # vfkit invocation in `bash -c '...'`, which causes the runtime-injected
@@ -52,13 +41,21 @@ in
         mountPoint = "/nix/.rw-store";
         size = 40960; # 40 GiB
       }
-      # Persistent agent state (opencode + herdr sessions), symlinked out of
-      # the tmpfs /root via the tmpfiles rules below. Sparse image: the size
-      # is a cap, not an allocation.
+      # Persistent opencode state, symlinked out of the tmpfs /root via the
+      # tmpfiles rules below. Sparse image: the size is a cap, not an
+      # allocation.
       {
         image = "agent-state.img";
         mountPoint = "/var/lib/agent-state";
         size = 10240; # 10 GiB
+      }
+      # Persistent development state for compiler/test scratch space and tool
+      # caches. Keeping it separate from agent state prevents either workload
+      # from exhausting the other's storage budget.
+      {
+        image = "dev-state.img";
+        mountPoint = "/var/lib/dev-state";
+        size = 40960; # 40 GiB
       }
     ];
 
@@ -129,13 +126,13 @@ in
     neededForBoot = false;
   };
 
-  networking.interfaces.eth0.useDHCP = true;
+  networking.useDHCP = true;
+  networking.firewall.allowedTCPPorts = [ 4096 ];
 
-  # Persist agent state on the agent-state volume: create the backing dirs
-  # and symlink them into root's tmpfs home. tmpfiles runs after
-  # local-fs.target (volume mounted) and before home-manager activation,
-  # which writes its managed files (e.g. herdr's config.toml) through the
-  # symlinks.
+  # Persist VM-specific credentials and agent state on the agent-state volume:
+  # create the backing dirs and symlink them into root's tmpfs home. tmpfiles
+  # runs after local-fs.target (volume mounted) and before home-manager
+  # activation writes application state.
   #
   # Deliberately a static list: which paths persist is a property of this VM,
   # not of the apps' home-manager config.
@@ -146,14 +143,34 @@ in
         "L+ ${target} - - - - /var/lib/agent-state/${name}"
       ];
     in
-    [ "d /nix/.rw-store/nix-build 0755 root root -" ]
-    # opencode: sessions/history/db
+    [
+      "d /nix/.rw-store/nix-build 0755 root root -"
+      "d /var/lib/dev-state/tmp 0700 root root -"
+      "d /var/lib/dev-state/tmp/go 0700 root root -"
+      "d /var/lib/dev-state/cache 0700 root root -"
+      "d /var/lib/dev-state/go 0700 root root -"
+      "d /var/lib/dev-state/docker 0710 root root -"
+      "d /root/.ssh 0700 root root -"
+      "d /var/lib/agent-state/github-ssh 0700 root root -"
+      "L+ /root/.ssh/id_ed25519_github - - - - /var/lib/agent-state/github-ssh/id_ed25519_github"
+      "L+ /root/.ssh/id_ed25519_github.pub - - - - /var/lib/agent-state/github-ssh/id_ed25519_github.pub"
+      "L+ /root/.ssh/known_hosts - - - - /var/lib/agent-state/github-ssh/known_hosts"
+    ]
+    # opencode: sessions/history/db; gcloud: configs and refresh credentials;
+    # github-ssh: VM-specific identity key only
     ++ persist "opencode" "/root/.local/share/opencode"
-    # herdr: resumable session state (session.json / session-history.json)
-    # lives in its config dir. Whole dir, not per-file symlinks — atomic
-    # temp-file+rename saves would silently replace file symlinks. Its XDG
-    # state dir is just a regenerable version cache; not persisted.
-    ++ persist "herdr" "/root/.config/herdr";
+    ++ persist "gcloud" "/root/.config/gcloud";
+
+  # Keep development tools from filling the tmpfs root. These apply to login
+  # shells; the OpenCode service receives the same values explicitly below.
+  hm.home.sessionVariables = {
+    TMPDIR = "/var/lib/dev-state/tmp";
+    XDG_CACHE_HOME = "/var/lib/dev-state/cache";
+    GOPATH = lib.mkForce "/var/lib/dev-state/go";
+    GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
+    GOCACHE = "/var/lib/dev-state/cache/go-build";
+    GOTMPDIR = "/var/lib/dev-state/tmp/go";
+  };
 
   # Big gotcha workaround: the VM's root FS is a tmpfs (RAM), and Nix's build
   # sandbox is created on the root FS by default. Disable the sandbox and point
@@ -162,29 +179,36 @@ in
     sandbox = false;
     build-dir = "/nix/.rw-store/nix-build";
     experimental-features = [ "nix-command" "flakes" ];
+    # NOTE: Keep these in sync with flake.nix nixConfig and nix.settings in
+    # modules/darwin/default.nix.
+    substituters = [
+      "https://cache.nixos.org"
+      "https://nix-community.cachix.org"
+      "https://catppuccin.cachix.org"
+      "https://anthonyenr1quez.cachix.org"
+    ];
+    trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "catppuccin.cachix.org-1:noG/4HkbhJb+lUAdKrph6LaozJvAeEEZj4N732IysmU="
+      "anthonyenr1quez.cachix.org-1:Gclb+0ZEVse0quS5IhHiYRsb9QgZ7oSPRfKPNHOl3eI="
+    ];
   };
 
   # System-level build toolchain (used by Go/cgo and general dev work).
   environment.systemPackages = with pkgs; [
+    bc
     gnumake
     gcc
   ];
 
   # Rootful Docker for the agent (root is the VM's only user, so there's no
-  # privilege-separation benefit to rootless). /var/lib/docker lives on the
-  # tmpfs root like the rest of the VM: images/containers are ephemeral and
-  # count against the VM's RAM budget, matching the VM's disposable,
-  # stateless-by-default design (see agent-state persistence above for the
-  # exception).
-  virtualisation.docker.enable = true;
-
-  # Search our collision-free terminfo first; keep the system path as
-  # fallback for entries in dirs the case hack didn't touch (e.g. v/vt220,
-  # the serial console's TERM).
-  environment.variables.TERMINFO_DIRS = [
-    "${vm-terminfo}/share/terminfo"
-    "/run/current-system/sw/share/terminfo"
-  ];
+  # privilege-separation benefit to rootless). Images, containers, and volumes
+  # use the disk-backed development state instead of exhausting root tmpfs.
+  virtualisation.docker = {
+    enable = true;
+    daemon.settings.data-root = "/var/lib/dev-state/docker";
+  };
 
   # Treat the VM like another machine: reuse the shared system config
   # (modules/common.nix), which bootstraps home-manager and pulls in the full
@@ -208,8 +232,51 @@ in
   hm.opencode = {
     enable = true;
     sandboxed = true;
+    server = true;
   };
+  # The credential symlinks under /root are denied by the shared OpenCode
+  # policy. Deny their VM-specific backing paths too, so direct paths cannot
+  # bypass those file-tool guards.
+  hm.programs.opencode.settings.permission = {
+    read = {
+      "/var/lib/agent-state/gcloud/**" = "deny";
+      "/var/lib/agent-state/github-ssh/**" = "deny";
+    };
+    external_directory = {
+      "/var/lib/agent-state/gcloud" = "deny";
+      "/var/lib/agent-state/gcloud/*" = "deny";
+      "/var/lib/agent-state/github-ssh" = "deny";
+      "/var/lib/agent-state/github-ssh/*" = "deny";
+    };
+  };
+  hm.herdr.enable = false;
   hm.mcp.enable = true;
+
+  systemd.services.opencode = {
+    description = "OpenCode server";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" "home-manager-root.service" ];
+
+    environment = {
+      HOME = "/root";
+      PATH = lib.mkForce "/etc/profiles/per-user/root/bin:/run/current-system/sw/bin";
+      TMPDIR = "/var/lib/dev-state/tmp";
+      XDG_CACHE_HOME = "/var/lib/dev-state/cache";
+      GOPATH = "/var/lib/dev-state/go";
+      GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
+      GOCACHE = "/var/lib/dev-state/cache/go-build";
+      GOTMPDIR = "/var/lib/dev-state/tmp/go";
+      OPENCODE_DISABLE_PROJECT_CONFIG = "1";
+    };
+
+    serviceConfig = {
+      ExecStart = "${lib.getExe pkgs.opencode} serve";
+      Restart = "on-failure";
+      RestartSec = 2;
+      WorkingDirectory = "/root";
+    };
+  };
 
   # The shared git module enables SSH commit signing with a key that does not
   # exist in the VM. Disable signing so the agent can commit; re-sign on the

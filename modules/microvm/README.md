@@ -6,12 +6,20 @@ Virtualization framework) using [microvm.nix](https://github.com/microvm-nix/mic
 
 Based on <https://abhinavsarkar.net/notes/2026-microvm-nix/>.
 
+### Additional References
+- https://devctrl.blog/posts/maximum-security-confinement-for-your-ai-agents-with-microvm-nix/
+- https://buduroiu.com/blog/openclaw-microvm/
+- https://github.com/razvanz/nixbox
+- https://kraftnix.dev/blog/why-you-should-use-microvm-nix/
+- https://github.com/archie-judd/agent-sandbox.nix
+
 ## Why
 
 The agent runs **inside** the VM. Everything it *executes* — builds, tests,
 arbitrary commands, dependency code — is caged. It cannot reach secrets
 (`~/.ssh`, tokens, keychains), the rest of the host filesystem, or the system;
-networking is NAT-only (outbound only; the host cannot connect into the VM).
+networking is NAT-only, with only the OpenCode port allowed through the guest
+firewall for host attachment.
 
 This closes the enforcement gap of agent-level permission configs: those gate
 what the agent *asks* to do, but anything it legitimately shells out to (a
@@ -62,8 +70,8 @@ model instead of implying a boundary that doesn't exist.
   other settings shared by the Darwin host and its VM.
 - `hosts/darwin/<host>/darwin.nix` holds macOS-only settings such as GUI apps,
   Homebrew, `launchd`, and system defaults.
-- `darwin.nix` provides the host-side `microvm-run` launcher and opt-in Linux
-  builder.
+- `darwin.nix` provides the host-side `microvm` lifecycle helper and opt-in
+  Linux builder.
 
 ## Host configuration
 
@@ -72,11 +80,10 @@ Each enabled Darwin host has a matching NixOS output:
 - `agent-sandbox-damascus`
 - `agent-sandbox-MacBook-Pro-2`
 
-Import `modules/microvm/darwin.nix` from a host's `darwin.nix` to install
-`microvm-run`. The command builds that host's matching guest. The guest logs in
-as `root` and keeps its hostname as `agent-sandbox`, but receives the host's
-portable packages, environment variables, shell settings, and development
-tools.
+Import `modules/microvm/darwin.nix` from a host's `darwin.nix` to install the
+launchers. They build that host's matching guest. The guest logs in as `root`
+and keeps its hostname as `agent-sandbox`, but receives the host's portable
+packages, environment variables, shell settings, and development tools.
 
 The guest excludes macOS-only configuration. It does not receive GUI apps,
 Homebrew casks, `launchd` settings, macOS system defaults, or host secrets.
@@ -87,13 +94,19 @@ Each VM is `aarch64-linux`. CI builds the enabled guest closures and pushes them
 to Cachix, so you normally run:
 
 ```sh
-microvm-run          # builds/substitutes the VM, then boots it via vfkit
+microvm start        # start in the background
+microvm status       # check the VM and OpenCode server
+microvm logs         # follow the background console log
+microvm stop
+microvm restart      # stop and start again
+microvm run          # foreground console
 ```
 
-Exit the VM with `poweroff` at its shell prompt.
+Run `microvm -h` for the command list. Exit a foreground VM with `poweroff` at
+its shell prompt.
 
 To (re)build a VM locally, temporarily set `microvm.linuxBuilder.enable = true`
-in the host's `darwin.nix`, rebuild and switch, run `microvm-run`, then set it
+in the host's `darwin.nix`, rebuild and switch, run `microvm run`, then set it
 back to `false`.
 
 State locations on the host (per-user, resolved at launch via `$HOME`):
@@ -102,13 +115,26 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   overlay (persists across runs).
 - `~/.local/share/microvm/agent-state.img` — persistent agent state. The VM
   is otherwise stateless (tmpfs root; config comes from the Nix closure), but
-  opencode sessions/history (`~/.local/share/opencode`) and herdr session
-  state (`~/.config/herdr`) are symlinked onto this volume so they survive
-  `poweroff`.
+  OpenCode sessions/history (`~/.local/share/opencode`) and the VM's gcloud
+  configuration (`~/.config/gcloud`) are symlinked onto this volume so they
+  survive `poweroff`. The MacBook-Pro-2 host and work VM declare their
+  `us-docker.pkg.dev` gcloud credential-helper mapping at activation; the
+  Darwin host also selects its OrbStack Docker context.
+  The VM-specific GitHub SSH identity (`~/.ssh/id_ed25519_github` and its
+  public key) and `~/.ssh/known_hosts` are also persisted individually; SSH
+  configuration remains ephemeral.
+- `~/.local/share/microvm/dev-state.img` — persistent development scratch
+  space and caches. It backs `TMPDIR`, `XDG_CACHE_HOME`, and Go's module and
+  build caches, plus Docker images, containers, and volumes, so development
+  workloads do not exhaust the tmpfs root.
+- `~/.local/share/microvm/vfkit.pid` and `vfkit.log` — background process state
+  and console output.
+- `~/.local/share/microvm/runner` — GC root for the running VM closure.
 
-Note: opencode's `auth.json` (API credentials) lives in that persisted state
-— same protection class as the host's own `~/.local/share/opencode`, but be
-aware the "no secrets in the VM" property now excludes the agent's own login.
+Note: OpenCode's `auth.json` (API credentials) and gcloud's refresh credentials
+live in the persisted agent state, as does the VM-specific GitHub private key.
+They are separate from the host's credential stores, but the "no secrets in the
+VM" property excludes these VM-specific logins and key.
 
 ## Shares
 
@@ -124,12 +150,16 @@ without it.
 
 ## Workflow
 
-There isn't one — that's the point. Boot the VM, `cd ~/projects/<repo>`, start
-an agent session (one session per repo). On the host, keep the same directory
-open in your editor: you see edits live, you intervene and edit alongside the
-agent, and finished work is already in your repo on whatever branch the agent
-used. Commit, branch, and push with your normal git habits (pushes happen
-host-side — the VM deliberately has no credentials).
+From a directory below `~/projects`, run `opencode`. It starts the VM when
+needed and attaches the host TUI to its OpenCode server with the corresponding
+`/root/projects` directory. `opencode-vm` is an explicit alias for the same
+remote behavior; use `opencode-local` to run OpenCode directly on macOS.
+
+Keep the same directory open in your host editor: you see edits live, intervene
+alongside the agent, and finished work is already in the host repo. Commit,
+branch, and push with normal git habits. The VM has no host SSH credentials, so
+Git pushes normally happen host-side unless its VM-specific GitHub key is
+configured for repository access.
 
 The VM's git identity can commit but cannot sign (no keys in the VM); re-sign
 on the host if you need signed history.

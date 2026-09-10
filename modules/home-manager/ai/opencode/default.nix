@@ -13,8 +13,8 @@ let
   go-modern-guidelines = pkgs.fetchFromGitHub {
     owner = "JetBrains";
     repo = "go-modern-guidelines";
-    rev = "c17350498ae6a8f50e0d3882cd0d7fc132b5a233"; # main
-    sha256 = "0y8pvfp9qmygf1kdhzzcd1xnbminpmg3i6drkmx5jcdbdfya7n3l";
+    rev = "91a30b36f05bb6424bd77e9817811c0e9c003aa2"; # main
+    sha256 = "1pklkd7jim87m7i6bn7ysvvskz48hkaw031882azzcn1b69pm54r";
   };
 
   stop-slop = pkgs.fetchFromGitHub {
@@ -46,10 +46,16 @@ in
       Rules protecting live repo state (git, rm) and secrets (read denies)
       still apply, since those risks aren't mitigated by the sandbox boundary
     '';
+    server = mkEnableOption ''
+      configure opencode serve to listen on all interfaces on port 4096
+    '';
   };
 
   config = mkIf cfg.enable {
     catppuccin.opencode.enable = true;
+
+    # Keep repository-controlled config from weakening the global agent policy.
+    home.sessionVariables.OPENCODE_DISABLE_PROJECT_CONFIG = "1";
 
     programs = {
       ripgrep.enable = true; # dependency
@@ -80,25 +86,33 @@ in
         tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
 
         settings = {
+          server = lib.mkIf cfg.server {
+            hostname = "0.0.0.0";
+            port = 4096;
+          };
+
           lsp = true; # todo gopls on mod and sum?
 
           # https://github.com/wimpysworld/nix-config/blob/4ce6c0e6afffcd6586306cd92499c4fb62efe749/home-manager/_mixins/development/opencode/default.nix
           permission = {
             # Safe operations - allow without prompting
-            # CRITICAL: Deny rules must be LAST due to .findLast() matching
+            # Nix serializes keys lexicographically; OpenCode's .findLast()
+            # gives later matching keys priority.
             read = {
-              # ALLOW: Default allow most file reads (FIRST - lowest priority)
+              # ALLOW: Broad defaults sort first and have lowest priority
               "*" = "allow";
               "**/*" = "allow";
 
               # ══════════════════════════════════════════════════════════════
-              # DENY: Credentials and secrets (LAST - highest priority)
-              # These must come after the allow rules due to .findLast()
+              # DENY: Credentials and secrets
+              # These keys sort after the broad defaults, so matching denies win.
               # ══════════════════════════════════════════════════════════════
 
               # Environment files
               ".env" = "deny";
               ".env.*" = "deny";
+              "**/.env" = "deny";
+              "**/.env.*" = "deny";
               "**/env.go" = "allow";
               ".env.local" = "deny";
               ".env.*.local" = "deny";
@@ -150,6 +164,10 @@ in
 
               # VCS credentials
               "${config.xdg.configHome}/gh/hosts.yml" = "deny";
+              ".git-credentials" = "deny";
+              "**/.git-credentials" = "deny";
+              ".netrc" = "deny";
+              "**/.netrc" = "deny";
 
               # Container/Kubernetes secrets
               "${config.home.homeDirectory}/.docker/config.json" = "deny";
@@ -167,8 +185,11 @@ in
             list = "allow"; # Listing directories
             todoread = "allow"; # Reading todo lists
             lsp = "allow"; # Language server queries
-            # Potentially destructive operations - require approval
-            edit = "allow"; # All file modifications (edit, write, patch)
+            # File tools may modify only the active worktree.
+            edit = {
+              "*" = "allow"; # Modify files within the active worktree
+              "../*" = "deny"; # Other projects remain read-only to file tools
+            };
             bash = {
               # ══════════════════════════════════════════════════════════════
               # Shell - read-only utilities (safe with any arguments)
@@ -190,11 +211,16 @@ in
               "pwd" = "allow";
               "which" = "allow";
               "which *" = "allow";
+              "command -v *" = "allow";
               "type" = "allow";
               "type *" = "allow";
               "env" = "allow";
+              "env --version" = "allow";
               "fd" = "allow";
               "fd *" = "allow";
+              # Prevent accidental scans of the entire guest filesystem.
+              "find /" = "deny";
+              "find / *" = "deny";
               "rg" = "allow";
               "rg *" = "allow";
               "grep" = "allow";
@@ -237,6 +263,8 @@ in
               "basename *" = "allow";
               "dirname *" = "allow";
               "realpath *" = "allow";
+              "readlink" = "allow";
+              "readlink *" = "allow";
               "stat" = "allow";
               "stat *" = "allow";
               "du" = "allow";
@@ -341,6 +369,23 @@ in
               "shfmt -d *" = "allow";
               "luacheck *" = "allow";
 
+              # OpenCode diagnostics
+              "opencode --help" = "allow";
+              "opencode --version" = "allow";
+              "opencode agent list" = "allow";
+              "opencode debug --help" = "allow";
+              "opencode debug agent *" = "allow";
+              "opencode debug config" = "allow";
+              "opencode debug info" = "allow";
+              "opencode debug paths" = "allow";
+              "opencode debug skill" = "allow";
+              "opencode mcp list" = "allow";
+              "opencode session list" = "allow";
+
+              # Shell syntax and version checks
+              "bash --version" = "allow";
+              "bash -n *" = "allow";
+
               # Shell - ask: file modification or redirection risk
               "xdg-open *" = sb "ask";
               "sed" = sb "ask";
@@ -360,7 +405,7 @@ in
               "ln *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
-              # Systemd - deny power management first
+              # Systemd - deny power management
               # ══════════════════════════════════════════════════════════════
               "systemctl poweroff*" = "deny";
               "systemctl reboot*" = "deny";
@@ -425,7 +470,7 @@ in
               "systemctl set-property *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
-              # Docker - deny mass destruction first
+              # Docker - deny mass destruction
               # ══════════════════════════════════════════════════════════════
               "docker rm *" = "deny";
               "docker rmi *" = "deny";
@@ -440,13 +485,18 @@ in
               # Docker - read-only queries
               "docker --version" = "allow";
               "docker version" = "allow";
+              "docker version *" = "allow";
+              "docker buildx version" = "allow";
               "docker info" = "allow";
+              "docker info *" = "allow";
               "docker ps" = "allow";
               "docker ps *" = "allow";
               "docker images" = "allow";
               "docker images *" = "allow";
               "docker logs *" = "allow";
               "docker inspect *" = "allow";
+              "docker image inspect *" = "allow";
+              "docker manifest inspect *" = "allow";
               "docker stats" = "allow";
               "docker stats *" = "allow";
               "docker network ls" = "allow";
@@ -464,6 +514,17 @@ in
               "docker-compose config*" = "allow";
               "docker compose --version" = "allow";
               "docker compose config*" = "allow";
+              "docker compose images" = "allow";
+              "docker compose images *" = "allow";
+              "docker compose logs" = "allow";
+              "docker compose logs *" = "allow";
+              "docker compose ls" = "allow";
+              "docker compose ls *" = "allow";
+              "docker compose port *" = "allow";
+              "docker compose ps" = "allow";
+              "docker compose ps *" = "allow";
+              "docker compose top" = "allow";
+              "docker compose top *" = "allow";
 
               # Docker - ask: container operations
               "docker build *" = sb "ask";
@@ -539,7 +600,7 @@ in
               "clang-format *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
-              # GitHub CLI - deny destructive first
+              # GitHub CLI - deny destructive operations
               # ══════════════════════════════════════════════════════════════
               "gh repo delete*" = "deny";
               "gh release delete*" = "deny";
@@ -569,6 +630,15 @@ in
               "gh gist view*" = "allow";
               "gh gist list*" = "allow";
               "gh api *" = "allow";
+              "gh api *--field*" = "ask";
+              "gh api *--input*" = "ask";
+              "gh api *--method*" = "ask";
+              "gh api *--raw-field*" = "ask";
+              "gh api *-F *" = "ask";
+              "gh api *-X *" = "ask";
+              "gh api *-X GET" = "allow";
+              "gh api *-f *" = "ask";
+              "gh api *-f *-X GET" = "allow";
               "gh search *" = "allow";
 
               # GitHub CLI - ask: state modifications
@@ -598,7 +668,7 @@ in
               "gh gist edit*" = "ask";
 
               # ══════════════════════════════════════════════════════════════
-              # Git - deny destructive first
+              # Git - deny destructive operations
               # ══════════════════════════════════════════════════════════════
               "git reset --hard*" = "deny";
               "git clean*" = "deny";
@@ -611,20 +681,38 @@ in
               "git status *" = "allow";
               "git diff" = "allow";
               "git diff *" = "allow";
+              "git --no-pager diff" = "allow";
+              "git --no-pager diff *" = "allow";
+              "git --no-pager grep" = "allow";
+              "git --no-pager grep *" = "allow";
               "git log" = "allow";
               "git log *" = "allow";
               "git show" = "allow";
               "git show *" = "allow";
               "git branch" = "allow";
+              "git branch --show-current" = "allow";
               "git branch -a*" = "allow";
               "git branch -v*" = "allow";
-              "git branch -r*" = "allow";
+              "git branch -r" = "allow";
+              "git branch -r --contains*" = "allow";
+              "git branch -r --list*" = "allow";
+              "git branch -r --merged*" = "allow";
+              "git branch -r --no-merged*" = "allow";
+              "git branch -r -v*" = "allow";
               "git branch --list*" = "allow";
               "git branch --contains*" = "allow";
               "git branch --merged*" = "allow";
               "git branch --no-merged*" = "allow";
               "git remote" = "allow";
               "git remote *" = "allow";
+              "git remote add *" = "ask";
+              "git remote prune *" = "ask";
+              "git remote remove *" = "ask";
+              "git remote rename *" = "ask";
+              "git remote set-branches *" = "ask";
+              "git remote set-head *" = "ask";
+              "git remote set-url *" = "ask";
+              "git remote update*" = "ask";
               "git tag" = "allow";
               "git tag -l*" = "allow";
               "git tag --list*" = "allow";
@@ -632,6 +720,8 @@ in
               "git stash show*" = "allow";
               "git reflog" = "allow";
               "git reflog *" = "allow";
+              "git reflog delete*" = "ask";
+              "git reflog write*" = "ask";
               "git rev-parse *" = "allow";
               "git describe *" = "allow";
               "git shortlog *" = "allow";
@@ -646,11 +736,16 @@ in
               "git worktree list" = "allow";
               "git name-rev *" = "allow";
               "git cat-file *" = "allow";
+              "git check-attr *" = "allow";
+              "git check-ignore *" = "allow";
               "git count-objects*" = "allow";
               "git for-each-ref *" = "allow";
               "git symbolic-ref *" = "allow";
+              "git merge-base *" = "allow";
+              "git submodule status*" = "allow";
               "git verify-commit *" = "allow";
               "git verify-tag *" = "allow";
+              "git worktree list *" = "allow";
 
               # Git - ask: state modifications
               "git add *" = "ask";
@@ -659,11 +754,12 @@ in
               "git push" = "ask";
               "git push *" = "ask";
 
-              # Force push - explicit deny (must come AFTER general push patterns)
+              # Force push - explicit deny; these keys sort after general push rules.
               "git push*--force*" = "deny";
               "git push*-f *" = "deny";
               "git push * --force*" = "deny";
               "git push * -f*" = "deny";
+              "git push -f" = "deny";
 
               "git pull" = "ask";
               "git pull *" = "ask";
@@ -703,7 +799,7 @@ in
               "git submodule *" = "ask";
 
               # ══════════════════════════════════════════════════════════════
-              # Nix - deny garbage collection first
+              # Nix - deny garbage collection
               # ══════════════════════════════════════════════════════════════
               "nix-collect-garbage" = "deny";
               "nix-collect-garbage *" = "deny";
@@ -730,10 +826,15 @@ in
               "nix log *" = "allow";
               "nix show-config" = "allow";
               "nix show-config *" = "allow";
+              "nix config show" = "allow";
+              "nix config show *" = "allow";
               "nix doctor" = "allow";
               "nix store verify *" = "allow";
               "nix-store --query *" = "allow";
+              "nix-store --verify-path *" = "allow";
               "nix-store -q *" = "allow";
+              "nix-store -q*" = "allow";
+              "nixos-option *" = "allow";
               "nixfmt" = "allow";
               "nixfmt *" = "allow";
               "statix *" = "allow";
@@ -788,7 +889,7 @@ in
               "gofmt *" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
-              # JavaScript/TypeScript - deny cache corruption first
+              # JavaScript/TypeScript - deny cache corruption
               # ══════════════════════════════════════════════════════════════
               "npm cache clean --force*" = "deny";
               "npm cache clean -f*" = "deny";
@@ -980,8 +1081,8 @@ in
 
               "pytest" = sb "ask";
               "pytest *" = sb "ask";
-              "python -m pytest*" = sb "ask";
-              "python3 -m pytest*" = sb "ask";
+              "python -m pytest *" = sb "ask";
+              "python3 -m pytest *" = sb "ask";
               "mypy" = sb "ask";
               "mypy *" = sb "ask";
               "ruff" = sb "ask";
@@ -991,14 +1092,14 @@ in
 
               # ══════════════════════════════════════════════════════════════
               # CATCH-ALL: Unknown commands require approval
-              # Must come BEFORE deny rules in Nix, but will be processed
-              # first by opencode's .findLast() matching
+              # "*" sorts before command-specific keys, making it the
+              # lowest-priority fallback under OpenCode's .findLast().
               # ══════════════════════════════════════════════════════════════
               "*" = "ask";
 
               # ══════════════════════════════════════════════════════════════
-              # GLOBAL OVERRIDES - MUST BE LAST (highest priority with .findLast())
-              # These rules match last and override earlier patterns
+              # GLOBAL SAFETY RULES
+              # These command-specific keys override the catch-all when matched.
               # ══════════════════════════════════════════════════════════════
 
               # File deletion (supervised - prompts for confirmation)
@@ -1099,7 +1200,7 @@ in
               "*" = sb "ask";
 
               # ══════════════════════════════════════════════════════════════
-              # DENY: Sensitive system directories (highest priority - LAST)
+              # DENY: Sensitive system directories (override the catch-all)
               # ══════════════════════════════════════════════════════════════
               "/etc/shadow" = "deny";
               "/etc/gshadow" = "deny";
@@ -1107,6 +1208,10 @@ in
               "/etc/sudoers.d/*" = "deny";
               "/root/*" = "deny";
               "/boot/*" = "deny";
+
+              # Other repositories may be read for cross-project context;
+              # the edit rules above still deny writes outside the worktree.
+              "${config.home.homeDirectory}/projects/*" = "allow";
 
               # DENY: Sensitive user directories (fully qualified paths - defense-in-depth)
               # Match parent directory patterns that Read tool checks
