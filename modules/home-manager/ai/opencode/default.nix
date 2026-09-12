@@ -120,6 +120,11 @@ in
               ".secrets/**" = "deny";
               "*secret*" = "deny";
 
+              # Accidental-disclosure guards, not a shell security boundary.
+              "${config.home.homeDirectory}/.config/sops/age" = "deny";
+              "${config.home.homeDirectory}/.config/sops/age/**" = "deny";
+              "${config.xdg.dataHome}/opencode/auth.json" = "deny";
+
               # SSH keys (fully qualified + patterns)
               "${config.home.homeDirectory}/.ssh/**" = "deny";
               "**/id_rsa" = "deny";
@@ -1229,6 +1234,10 @@ in
               "${config.xdg.dataHome}/kube/*" = "deny";
               "${config.xdg.configHome}/gh" = "deny";
               "${config.xdg.configHome}/gh/*" = "deny";
+              "${config.home.homeDirectory}/.config/sops/age" = "deny";
+              "${config.home.homeDirectory}/.config/sops/age/*" = "deny";
+              # Keep the remaining OpenCode state accessible.
+              "${config.xdg.dataHome}/opencode/auth.json" = "deny";
               "${config.home.homeDirectory}/.git-credentials" = "deny";
               "${config.home.homeDirectory}/.netrc" = "deny";
             };

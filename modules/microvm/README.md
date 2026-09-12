@@ -1,9 +1,8 @@
-# agent-sandbox microVMs
+# Agent sandbox microVMs
 
-Host-specific NixOS microVMs for sandboxing LLM/coding agents. They run on
-Apple Silicon macOS through [vfkit](https://github.com/crc-org/vfkit) (Apple
-Virtualization framework) using [microvm.nix](https://github.com/microvm-nix/microvm.nix).
-
+Host-specific NixOS guests on Apple Silicon macOS, using
+[microvm.nix](https://github.com/microvm-nix/microvm.nix) and
+[vfkit](https://github.com/crc-org/vfkit).
 Based on <https://abhinavsarkar.net/notes/2026-microvm-nix/>.
 
 ### Additional References
@@ -13,153 +12,112 @@ Based on <https://abhinavsarkar.net/notes/2026-microvm-nix/>.
 - https://kraftnix.dev/blog/why-you-should-use-microvm-nix/
 - https://github.com/archie-judd/agent-sandbox.nix
 
-## Why
+## Configuration
 
-The agent runs **inside** the VM. Everything it *executes* — builds, tests,
-arbitrary commands, dependency code — is caged. It cannot reach secrets
-(`~/.ssh`, tokens, keychains), the rest of the host filesystem, or the system;
-networking is NAT-only, with only the OpenCode port allowed through the guest
-firewall for host attachment.
+- `vm.nix`: Linux guest, storage, shares, and OpenCode service.
+- `darwin.nix`: host launcher and optional Linux builder.
+- `hosts/darwin/<host>/default.nix`: portable settings shared with the guest.
+- `hosts/darwin/<host>/darwin.nix`: macOS-only settings and launcher import.
+- `profiles/secrets.nix`: shared host credentials; the guest excludes this module.
 
-This closes the enforcement gap of agent-level permission configs: those gate
-what the agent *asks* to do, but anything it legitimately shells out to (a
-`make` target, an `npm test`) runs unrestricted. In the VM, that execution is
-structurally confined.
+Each Mac selects its matching `agent-sandbox-damascus` or
+`agent-sandbox-MacBook-Pro-2` output. The guest runs as root with 4 vCPUs and
+8 GiB RAM. CI caches the Linux closures; the launcher builds/substitutes its
+runner on demand rather than during every Darwin rebuild.
 
-## Trust model
+## Use
 
-Think of the VM as a **second computer with your projects directory plugged
-in**:
-
-- `~/projects` is shared **read-write**. Agents work directly in your real
-  repos — the same working copy you have open in your editor. You watch and
-  edit alongside the agent, exactly as with a host-side agent session.
-- **Git is the undo layer, the VM is the execution jail.** The sandbox does
-  not protect your repos from the agent — it protects everything *else* from
-  whatever the agent runs. Repo safety comes from git (commit/push before
-  sessions, reflog, remotes) and from you watching the session.
-
-A read-only share would be cosmetic anyway: vfkit's virtio-fs has no
-host-side read-only flag, so `ro` could only be a guest mount option, which
-guest root (the agent) can remount rw. Mounting rw states the real trust
-model instead of implying a boundary that doesn't exist.
-
-### Consequences worth knowing
-
-- **Commit or stash before letting an agent loose.** Uncommitted work in a
-  repo the agent touches is destructible; committed work is always
-  recoverable via reflog.
-- **`.git` dirs are agent-writable**, including hooks and config
-  (`core.hooksPath`, `core.fsmonitor`), which execute host-side when *you*
-  run git in that repo. After an unattended/suspect session, glance at
-  `.git/config` and hooks, or run
-  `git -c core.hooksPath=/dev/null -c core.fsmonitor= <cmd>`.
-- **Blast radius is all of `~/projects`**, not just the repo being worked on
-  — including this dotfiles repo. Review diffs before a `darwin-rebuild` that
-  follows an agent session.
-- **The host Nix store is visible read-only** in the VM (shared as the
-  overlay's lower layer): an agent can read everything in your `/nix/store`.
-  Store writes are blocked host-side by POSIX perms (root-owned), unlike
-  `~/projects` which your user owns.
-
-## Files
-
-- `vm.nix` configures the guest's vfkit runtime, storage, shares, and sandbox
-  settings. It imports the selected host's portable `default.nix`.
-- `hosts/darwin/<host>/default.nix` holds packages, shell configuration, and
-  other settings shared by the Darwin host and its VM.
-- `hosts/darwin/<host>/darwin.nix` holds macOS-only settings such as GUI apps,
-  Homebrew, `launchd`, and system defaults.
-- `darwin.nix` provides the host-side `microvm` lifecycle helper and opt-in
-  Linux builder.
-
-## Host configuration
-
-Each enabled Darwin host has a matching NixOS output:
-
-- `agent-sandbox-damascus`
-- `agent-sandbox-MacBook-Pro-2`
-
-Import `modules/microvm/darwin.nix` from a host's `darwin.nix` to install the
-launchers. They build that host's matching guest. The guest logs in as `root`
-and keeps its hostname as `agent-sandbox`, but receives the host's portable
-packages, environment variables, shell settings, and development tools.
-
-The guest excludes macOS-only configuration. It does not receive GUI apps,
-Homebrew casks, `launchd` settings, macOS system defaults, or host secrets.
-
-## Building & running
-
-Each VM is `aarch64-linux`. CI builds the enabled guest closures and pushes them
-to Cachix, so you normally run:
+Run `opencode` inside `~/projects` to start the VM and attach to the matching
+guest directory. `opencode-vm` does the same; `opencode-local` uses the host's
+credential-aware executable. Host and guest edits affect the same working copy.
 
 ```sh
-microvm start        # start in the background
-microvm status       # check the VM and OpenCode server
-microvm logs         # follow the background console log
-microvm stop
-microvm restart      # stop and start again
-microvm run          # foreground console
+microvm start        # background; wait up to 120 seconds for OpenCode
+microvm run          # foreground console; exit with guest poweroff
+microvm stop         # graceful shutdown; wait up to 120 seconds
+microvm restart
+microvm status       # exit 0: ready, 1: stopped, 2: starting/unhealthy
+microvm address      # running guest's IPv4 address
+microvm logs
 ```
 
-Run `microvm -h` for the command list. Exit a foreground VM with `poweroff` at
-its shell prompt.
+The launch lock covers builds, execution, and cleanup. Concurrent starts wait
+for the same VM. Startup timeout includes build time and leaves the launch
+running; inspect logs or retry. `stop` cannot cancel an in-progress build and
+does not force termination on timeout. An older runner without `control.sock`
+needs a one-time guest `poweroff` before using the new launcher.
 
-To (re)build a VM locally, temporarily set `microvm.linuxBuilder.enable = true`
-in the host's `darwin.nix`, rebuild and switch, run `microvm run`, then set it
-back to `false`.
+The launcher finds MAC `02:00:00:01:01:01` in `/var/db/dhcpd_leases`.
+Set `MICROVM_GUEST_ADDRESS` to the actual guest IPv4 address if discovery fails.
+It prefers `~/projects`, falling back to `~/Projects`. The canonical share root
+and host state path support ASCII letters, digits, `/`, `.`, `_`, and `-` due
+to upstream argument splitting. Nested project names may contain spaces.
 
-State locations on the host (per-user, resolved at launch via `$HOME`):
+For local Linux builds, set `microvm.linuxBuilder.enable = true` in the host's
+`darwin.nix` and rebuild. This uses nix-darwin's stock cached builder. Allow RAM
+for both VMs; disabling the builder deletes its disk/cache.
 
-- `~/.local/share/microvm/nix-store-overlay.img` — the VM's writable Nix store
-  overlay (persists across runs).
-- `~/.local/share/microvm/agent-state.img` — persistent agent state. The VM
-  is otherwise stateless (tmpfs root; config comes from the Nix closure), but
-  OpenCode sessions/history (`~/.local/share/opencode`) and the VM's gcloud
-  configuration (`~/.config/gcloud`) are symlinked onto this volume so they
-  survive `poweroff`. The MacBook-Pro-2 host and work VM declare their
-  `us-docker.pkg.dev` gcloud credential-helper mapping at activation; the
-  Darwin host also selects its OrbStack Docker context.
-  The VM-specific GitHub SSH identity (`~/.ssh/id_ed25519_github` and its
-  public key) and `~/.ssh/known_hosts` are also persisted individually; SSH
-  configuration remains ephemeral.
-- `~/.local/share/microvm/dev-state.img` — persistent development scratch
-  space and caches. It backs `TMPDIR`, `XDG_CACHE_HOME`, and Go's module and
-  build caches, plus Docker images, containers, and volumes, so development
-  workloads do not exhaust the tmpfs root.
-- `~/.local/share/microvm/vfkit.pid` and `vfkit.log` — background process state
-  and console output.
-- `~/.local/share/microvm/runner` — GC root for the running VM closure.
+## Credentials
 
-Note: OpenCode's `auth.json` (API credentials) and gcloud's refresh credentials
-live in the persisted agent state, as does the VM-specific GitHub private key.
-They are separate from the host's credential stores, but the "no secrets in the
-VM" property excludes these VM-specific logins and key.
+Provision the existing age private key from a secure backup at
+`~/.config/sops/age/keys.txt` (mode `0600`, parent directories `0700`). Do not
+overwrite an existing key or replace it with one that cannot decrypt the bundles.
+The launcher also accepts `SOPS_AGE_KEY_FILE`.
 
-## Shares
+Host Home Manager decrypts `personal.sops.yaml`. At VM launch, the host decrypts
+only `secrets/agent.sops.env` into a private temporary directory and shares it as
+`/run/host-secrets`. The guest service reads `opencode.env`; the age key stays on
+the host. Decryption failure aborts launch. Without the bundle, the VM can boot
+for diagnostics but OpenCode cannot start.
 
-| Host          | VM (guest)       | Mode | Notes                               |
-| ------------- | ---------------- | ---- | ----------------------------------- |
-| `~/projects`  | `/root/projects` | rw   | injected at launch (per-user $HOME) |
-| `/nix/store`  | `/nix/.ro-store` | ro   | lower layer of the store overlay    |
+Rotate from a trusted host editor:
 
-The projects share's host path is per-user, so it is injected at launch
-(resolving `$HOME`) via `extraArgsScript` rather than baked into the closure;
-the guest mounts it by tag with `nofail` so a CI-built closure still boots
-without it.
+```sh
+sops edit --input-type dotenv --output-type dotenv secrets/agent.sops.env
+git add -- secrets/agent.sops.env
+sudo darwin-rebuild switch --flake .#damascus  # or .#MacBook-Pro-2
+microvm restart
+```
 
-## Workflow
+Verify the new credentials, then revoke the old ones. The launcher pins the
+installed flake snapshot, so editing ciphertext and restarting alone is not
+enough. Track ciphertext, never private keys or plaintext.
 
-From a directory below `~/projects`, run `opencode`. It starts the VM when
-needed and attaches the host TUI to its OpenCode server with the corresponding
-`/root/projects` directory. `opencode-vm` is an explicit alias for the same
-remote behavior; use `opencode-local` to run OpenCode directly on macOS.
+## State and shares
 
-Keep the same directory open in your host editor: you see edits live, intervene
-alongside the agent, and finished work is already in the host repo. Commit,
-branch, and push with normal git habits. The VM has no host SSH credentials, so
-Git pushes normally happen host-side unless its VM-specific GitHub key is
-configured for repository access.
+Host state lives under `~/.local/share/microvm` (directory `0700`, images/logs
+`0600`). The guest has a tmpfs root with three persistent sparse images:
 
-The VM's git identity can commit but cannot sign (no keys in the VM); re-sign
-on the host if you need signed history.
+| Image | Size cap | Contents |
+| ----- | -------- | -------- |
+| `nix-store-overlay.img` | 40 GiB | Writable store and `/nix/var/nix` database, profiles, GC roots |
+| `agent-state.img` | 10 GiB | OpenCode sessions/auth, gcloud credentials, VM-specific GitHub SSH identity |
+| `dev-state.img` | 40 GiB | Build scratch, Go/tool caches, Docker data |
+
+The initrd binds Nix state before activation; each boot registers the system
+closure. Existing overlay contents remain intact, but previously unregistered
+paths are not repaired. Guest GC roots do not protect shared paths from host GC;
+the host `runner` symlink roots the declared VM closure.
+
+The guest mounts projects read-write and reads the host Nix store as its overlay
+lower layer. OpenCode requires both projects and credentials mounts plus successful
+Home Manager activation. The launcher removes its `agent-secrets.XXXXXX` directory
+after normal shutdown. After a crash, verify no VM/launch uses a stale directory
+before removing that specific directory; do not use wildcard deletion.
+
+## Trust boundary
+
+- Guest code can modify all shared projects, including `.git`. Keep a remote or
+  backup the guest cannot modify; reflogs are not a backup against `.git` deletion.
+- Shared hooks, Git config, and build scripts can execute on the host later.
+  Review changes before running host commands or rebuilding these dotfiles.
+- Guest-root code can read supplied API tokens and persisted credentials.
+  OpenCode read guards prevent accidents, not access by shell/dependency code.
+- NAT allows outbound traffic and access to reachable host/LAN services.
+  OpenCode remains unauthenticated on `0.0.0.0:4096`; anyone who can reach it may
+  control the agent. Authentication remains deferred.
+- Host SSH keys, keychains, and other unshared paths stay outside the VM. The
+  guest can read the entire host Nix store; host permissions protect store writes.
+
+Use Nix evaluation and ShellCheck for configuration/static checks. Verify native
+vfkit shutdown, mounts, and reboot persistence on macOS after deployment.

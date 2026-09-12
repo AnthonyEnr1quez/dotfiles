@@ -5,9 +5,19 @@
 # https://abhinavsarkar.net/notes/2026-microvm-nix/
 #
 # Networking note: vfkit only supports user-mode (NAT) networking. It does not
-# forward localhost ports, so host commands use the guest's conventional
-# 192.168.64.2 DHCP address.
+# forward localhost ports, so the host discovers the guest's DHCP lease by its
+# fixed MAC address rather than assuming a particular IP.
 { lib, pkgs, config, host, ... }:
+let
+  developmentEnvironment = {
+    TMPDIR = "/var/lib/dev-state/tmp";
+    XDG_CACHE_HOME = "/var/lib/dev-state/cache";
+    GOPATH = "/var/lib/dev-state/go";
+    GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
+    GOCACHE = "/var/lib/dev-state/cache/go-build";
+    GOTMPDIR = "/var/lib/dev-state/tmp/go";
+  };
+in
 {
   imports = [ ../common.nix ]
     ++ lib.optional (host != null) (../../hosts/darwin + "/${host}");
@@ -23,17 +33,18 @@
     # small disk-backed swap device rather than placing swap on the tmpfs root.
     vfkit.extraArgs = [ "--pidfile" "vfkit.pid" ];
 
-    # Disable the vfkit control socket. With a socket, microvm.nix wraps the
-    # vfkit invocation in `bash -c '...'`, which causes the runtime-injected
-    # `extraArgsScript` args (our projects share) to be passed to the
-    # wrapper shell instead of vfkit — so the share silently never attaches.
-    # We exit the VM with `poweroff` rather than the socket-based shutdown, so
-    # dropping the socket costs us nothing.
+    # Keep upstream's socket wrapper disabled: its `bash -c '...'` swallows
+    # extraArgsScript arguments instead of forwarding them to vfkit. Inject
+    # --restful-uri directly below; the host launcher owns socket shutdown.
     socket = null;
 
     # Writable overlay backed by a disk image so VM-local Nix builds/downloads
     # don't fill the tmpfs root (RAM).
     writableStoreOverlay = "/nix/.rw-store";
+    # Upstream loads the booted closure's regInfo into the DB on EVERY boot,
+    # before systemd/Nix clients start. Keep this even when the DB already
+    # exists, so a newly downloaded VM closure is registered too.
+    registerClosure = true;
 
     volumes = [
       {
@@ -70,24 +81,31 @@
       # NOTE: the projects (rw) share is NOT declared here. Its host path is
       # per-user ($HOME differs across Macs), so baking a source into the
       # closure would hardcode a username. Instead it's injected at launch via
-      # extraArgsScript below (which resolves $HOME at runtime), and mounted
+      # extraArgsScript below (using launcher-provided paths), and mounted
       # guest-side via fileSystems by its mount tag.
     ];
 
-    # Runtime-resolved virtiofs share. This script runs on the host at launch
-    # (as the invoking user), so $HOME is the real per-user home. Its stdout is
-    # appended to the vfkit command line.
-    #   - projects (rw): host ~/projects -> guest /root/projects
+    # Runtime-resolved shares and control socket. Stdout is appended to vfkit's
+    # command line with upstream shell word-splitting/globbing, so the launcher
+    # must reject whitespace, commas and glob characters in these host paths.
+    # The launcher must supply AGENT_PROJECTS_DIR; leaving it unset only
+    # supports diagnostic boots without the projects share or OpenCode service.
+    #   - projects (rw): host AGENT_PROJECTS_DIR -> guest /root/projects
     #   - agent-secrets: launch-scoped host secrets -> guest /run/host-secrets
     # Built with vmHostPackages because this script runs on the macOS HOST at
     # launch (not in the guest), so it needs a host-executable (aarch64-darwin)
     # shell.
     extraArgsScript = "${config.microvm.vmHostPackages.writeShellScript "microvm-runtime-shares" ''
-      echo \
-        "--device" "virtio-fs,sharedDir=$HOME/projects,mountTag=projects"
+      if [ -n "''${AGENT_PROJECTS_DIR:-}" ]; then
+        echo \
+          "--device" "virtio-fs,sharedDir=$AGENT_PROJECTS_DIR,mountTag=projects"
+      fi
       if [ -n "''${AGENT_SECRETS_DIR:-}" ]; then
         echo \
           "--device" "virtio-fs,sharedDir=$AGENT_SECRETS_DIR,mountTag=agent-secrets"
+      fi
+      if [ -n "''${AGENT_CONTROL_SOCKET:-}" ]; then
+        echo "--restful-uri" "unix://$AGENT_CONTROL_SOCKET"
       fi
     ''}";
 
@@ -98,6 +116,25 @@
         mac = "02:00:00:01:01:01";
       }
     ];
+  };
+
+  # vfkit uses the scripted initrd in pinned microvm.nix. Bind the entire Nix
+  # state before stage-2 activation and upstream's postBootCommands registration,
+  # not a late tmpfiles symlink that would hide a freshly populated tmpfs DB.
+  # postMountCommands runs after the overlay volume is mounted, allowing a new
+  # backing directory to be created on first boot without moving/deleting data.
+  boot.initrd.systemd.enable = false;
+  boot.initrd.postMountCommands = ''
+    mkdir -p /mnt-root/nix/.rw-store/nix-var /mnt-root/nix/var/nix || fail
+    mount -o bind /mnt-root/nix/.rw-store/nix-var /mnt-root/nix/var/nix || fail
+  '';
+  fileSystems."/nix/var/nix" = {
+    device = "/nix/.rw-store/nix-var";
+    fsType = "none";
+    options = [ "bind" ];
+    # Mounted manually above: stage-1's normal mount loop would wait for the
+    # nonexistent source directory on a fresh volume. Keep fstab for systemd.
+    neededForBoot = false;
   };
 
   # Guest mount for the runtime-injected virtiofs share (by mount tag).
@@ -118,7 +155,7 @@
   };
 
   # The host attaches this mount only for a launch with agent credentials. It
-  # stays optional so CI-built closures and unauthenticated sessions still boot.
+  # stays optional for diagnostic boots; OpenCode itself requires both shares.
   fileSystems."/run/host-secrets" = {
     device = "agent-secrets";
     fsType = "virtiofs";
@@ -163,13 +200,8 @@
 
   # Keep development tools from filling the tmpfs root. These apply to login
   # shells; the OpenCode service receives the same values explicitly below.
-  hm.home.sessionVariables = {
-    TMPDIR = "/var/lib/dev-state/tmp";
-    XDG_CACHE_HOME = "/var/lib/dev-state/cache";
-    GOPATH = lib.mkForce "/var/lib/dev-state/go";
-    GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
-    GOCACHE = "/var/lib/dev-state/cache/go-build";
-    GOTMPDIR = "/var/lib/dev-state/tmp/go";
+  hm.home.sessionVariables = developmentEnvironment // {
+    GOPATH = lib.mkForce developmentEnvironment.GOPATH;
   };
 
   # Big gotcha workaround: the VM's root FS is a tmpfs (RAM), and Nix's build
@@ -239,10 +271,12 @@
   # bypass those file-tool guards.
   hm.programs.opencode.settings.permission = {
     read = {
+      "/var/lib/agent-state/opencode/auth.json" = "deny";
       "/var/lib/agent-state/gcloud/**" = "deny";
       "/var/lib/agent-state/github-ssh/**" = "deny";
     };
     external_directory = {
+      "/var/lib/agent-state/opencode/auth.json" = "deny";
       "/var/lib/agent-state/gcloud" = "deny";
       "/var/lib/agent-state/gcloud/*" = "deny";
       "/var/lib/agent-state/github-ssh" = "deny";
@@ -256,17 +290,15 @@
     description = "OpenCode server";
     wantedBy = [ "multi-user.target" ];
     wants = [ "network-online.target" ];
-    after = [ "network-online.target" "home-manager-root.service" "run-host-secrets.mount" ];
+    requires = [ "home-manager-root.service" ];
+    after = [ "network-online.target" "home-manager-root.service" ];
+    # nofail keeps missing runtime shares from preventing diagnostic VM boots,
+    # but the server must never start against unmounted paths or an inactive HM.
+    unitConfig.RequiresMountsFor = [ "/root/projects" "/run/host-secrets" ];
 
-    environment = {
+    environment = developmentEnvironment // {
       HOME = "/root";
       PATH = lib.mkForce "/etc/profiles/per-user/root/bin:/run/current-system/sw/bin";
-      TMPDIR = "/var/lib/dev-state/tmp";
-      XDG_CACHE_HOME = "/var/lib/dev-state/cache";
-      GOPATH = "/var/lib/dev-state/go";
-      GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
-      GOCACHE = "/var/lib/dev-state/cache/go-build";
-      GOTMPDIR = "/var/lib/dev-state/tmp/go";
       OPENCODE_DISABLE_PROJECT_CONFIG = "1";
     };
 
