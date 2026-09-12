@@ -111,22 +111,14 @@ let
         stty intr undef quit undef susp undef
       fi
 
-      secret_file="${flakeRef}/secrets/personal.sops.yaml"
+      secret_file="${flakeRef}/secrets/agent.sops.env"
       if [ -f "$secret_file" ]; then
         agent_secrets_dir="$(mktemp -d "''${TMPDIR:-/tmp}/agent-secrets.XXXXXX")"
-        decrypt_secret() {
-          SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}" \
-            ${lib.getExe pkgs.sops} decrypt --extract "[\"$1\"]" "$secret_file"
-        }
-        mkdir "$agent_secrets_dir/gh"
-        decrypt_secret "gh_hosts" > "$agent_secrets_dir/gh/hosts.yml"
-        printf 'ANTHROPIC_API_KEY=' > "$agent_secrets_dir/opencode.env"
-        decrypt_secret "anthropic_api_key" >> "$agent_secrets_dir/opencode.env"
-        printf '%s\n' 'GH_CONFIG_DIR=/run/host-secrets/gh' >> "$agent_secrets_dir/opencode.env"
-        printf '%s\n' 'version: "1"' > "$agent_secrets_dir/gh/config.yml"
-        chmod 0400 "$agent_secrets_dir/gh/hosts.yml" "$agent_secrets_dir/opencode.env"
+        SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}" \
+          ${lib.getExe pkgs.sops} decrypt "$secret_file" > "$agent_secrets_dir/opencode.env"
+        chmod 0400 "$agent_secrets_dir/opencode.env"
       else
-        echo "No agent credentials configured; starting without GitHub or Anthropic authentication." >&2
+        echo "No agent credentials configured; OpenCode will not start." >&2
       fi
 
       AGENT_SECRETS_DIR="$agent_secrets_dir" "$runner/bin/microvm-run"
