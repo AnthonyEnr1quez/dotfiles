@@ -107,6 +107,10 @@ in
               "secrets/**" = "deny";
               ".secrets/**" = "deny";
               "*secret*" = "deny";
+              "/run/secrets/**" = "deny";
+              "/run/secrets.d/**" = "deny";
+              "/var/lib/sops-nix/**" = "deny";
+              "${config.xdg.configHome}/sops/age/**" = "deny";
 
               # SSH keys (fully qualified + patterns)
               "${config.home.homeDirectory}/.ssh/**" = "deny";

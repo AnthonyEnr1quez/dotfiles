@@ -1,1 +1,6 @@
 /result
+
+# Local age identities and plaintext scratch files; encrypted YAML is tracked.
+**/age-key.txt
+**/keys.txt
+secrets/**/*.plaintext.*
