@@ -32,8 +32,8 @@ Damascus's public recipients are recorded in `.sops.yaml` as `admin_damascus`,
 `damascus`, and `vm_damascus`. Preserve them and their rules. Do not copy their
 private identities to the work machines.
 
-At the time of this handoff, the Damascus guest still has a harmless `bootstrap`
-secret. The Mac's bootstrap declarations have been removed. Inspect the current
+Damascus's bootstrap declarations have been removed after successful tests. Its
+shared host module now declares an OpenAI API-key secret. Inspect the current
 worktree before editing: it may contain staged or unstaged user changes to the
 lock file, Linux builder, launcher, or other configuration. Do not undo those.
 

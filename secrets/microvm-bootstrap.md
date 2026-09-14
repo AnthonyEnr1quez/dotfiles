@@ -1,5 +1,9 @@
 # Damascus microVM bootstrap
 
+This test has passed. The guest bootstrap declaration has been removed in favor
+of the shared OpenAI API-key declaration. The procedure below records enrollment
+for reference; it no longer describes the active application secret.
+
 The Mac's user/admin and system identities have passed their decryption tests.
 Their temporary bootstrap declarations and ciphertext have been removed; their
 private key files and public recipient registrations stay in place.
