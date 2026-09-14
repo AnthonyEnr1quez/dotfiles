@@ -18,10 +18,14 @@ in
     sops = {
       defaultSopsFile = ../../secrets/microvms + "/agent-sandbox-${host}.yaml";
       age.keyFile = "/var/lib/agent-state/sops/age-key.txt";
-      # sops-nix adds RequiresMountsFor for the key path. Decrypt after the
-      # persistent volume mounts, rather than during early system activation.
+      # Decryption runs via systemd after local mounts and user creation.
+      # sops-nix still generates age keys in the earlier activation phase.
       useSystemdActivation = true;
     };
+
+    # Mount in the initrd so sops-nix's native activation hook writes the key
+    # to the persistent disk, rather than the guest's temporary root filesystem.
+    fileSystems."/var/lib/agent-state".neededForBoot = true;
 
     hm.home.sessionVariables.SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
 

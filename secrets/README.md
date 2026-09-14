@@ -61,72 +61,39 @@ The last command prints the public `age1...` recipient. New login shells get
 `SOPS_AGE_KEY_FILE` from Home Manager, including on macOS. Back up the private
 editing key in your password manager or another secure backup.
 
-## 3. Bootstrap each machine's identity
+## 3. Prepare recipient rules
 
-### Hosts
+The shared configuration enables `sops.age.generateKey`. On a machine's first
+deployment with declared secrets, sops-nix generates its private key if absent.
+It then attempts decryption. For a new identity, that first attempt fails until
+you enroll the public recipient and re-encrypt the file in step 5. Subsequent
+deployments reuse the existing key.
 
-Run on each host that will consume secrets:
+Configurations with no declared secrets do not generate a key. Start by
+encrypting the first files to your personal key so you can build the system
+before the machine identities exist.
 
-```bash
-sudo install -d -m 0700 /var/lib/sops-nix
-sudo test -f /var/lib/sops-nix/key.txt || sudo "$(command -v age-keygen)" -o /var/lib/sops-nix/key.txt
-sudo "$(command -v age-keygen)" -y /var/lib/sops-nix/key.txt
-```
-
-### MicroVMs
-
-After installing the plumbing on the Mac, stop the background VM and open its
-foreground console:
-
-```sh
-microvm stop
-microvm run
-```
-
-At the guest's root console, run:
-
-```sh
-install -d -m 0700 /var/lib/agent-state/sops
-test -f /var/lib/agent-state/sops/age-key.txt || age-keygen -o /var/lib/agent-state/sops/age-key.txt
-age-keygen -y /var/lib/agent-state/sops/age-key.txt
-```
-
-Record the public recipient, then run `poweroff` in the guest to return to the
-host. Repeat on the other Mac for its guest. Each VM keeps its private identity
-on its own `agent-state.img`; deleting that image requires restoring the key or
-enrolling a new one. Keep the key file at mode `0600`.
-
-The guest uses systemd-based secret provisioning. sops-nix requires the mount
-containing the age key before decryption, and OpenCode requires successful
-provisioning once you declare regular secrets. Use ordinary runtime secrets in
-these guests; `neededForUsers` runs earlier and needs separate early-boot key
-mounting.
-
-## 4. Enroll public recipients
-
-Replace the empty lists in `.sops.yaml` with your public recipients and exact
-file rules. For example, after substituting real `age1...` values:
+Replace the empty lists in `.sops.yaml` with your personal public recipient and
+exact file rules. Substitute a real `age1...` value:
 
 ```yaml
 keys:
   - &admin age1REPLACE_WITH_PERSONAL_PUBLIC_RECIPIENT
-  - &damascus age1REPLACE_WITH_HOST_PUBLIC_RECIPIENT
-  - &vm_damascus age1REPLACE_WITH_GUEST_PUBLIC_RECIPIENT
 
 creation_rules:
   - path_regex: ^secrets/hosts/damascus\.yaml$
     key_groups:
-      - age: [*admin, *damascus]
+      - age: [*admin]
   - path_regex: ^secrets/microvms/agent-sandbox-damascus\.yaml$
     key_groups:
-      - age: [*admin, *vm_damascus]
+      - age: [*admin]
 ```
 
 Add matching rules for `MacBook-Pro-2`, `mothership`, and the work guest as you
 enroll them. A recipient can decrypt the whole YAML file, so keep host-only
 credentials out of guest files.
 
-## 5. Add static OpenCode credentials
+## 4. Declare application credentials
 
 From the repository root on your host, open both encrypted files for the pair:
 
@@ -237,22 +204,91 @@ Log in from the guest and let OpenCode update its writable authentication state.
 The VM already persists `/root/.local/share/opencode` on the agent-state volume.
 Keep refreshed OAuth state there rather than managing it as static SOPS data.
 
-## 6. Deploy and update
+## 5. First deployment and machine enrollment
 
-Track the encrypted YAML files and shared host-module changes, then rebuild the
-relevant host.
-For a Mac and its guest:
+Track the encrypted YAML files and shared host-module changes. Enroll the host
+first, then its guest. These steps use Damascus; substitute the work Mac's names
+for its pair.
+
+### Host: generate, enroll, redeploy
+
+Deploy the host configuration:
 
 ```sh
+sudo darwin-rebuild switch --flake .#damascus
+```
+
+On a new host, expect decryption to fail after sops-nix generates
+`/var/lib/sops-nix/key.txt`. This is an incomplete deployment; applications that
+need the secrets may be unavailable. Run the next command separately, even if
+the rebuild exits with an error:
+
+```bash
+sudo "$(command -v age-keygen)" -y /var/lib/sops-nix/key.txt
+```
+
+Add that public recipient as `&damascus` under `keys` in `.sops.yaml`, then change
+the host file's recipient list to `age: [*admin, *damascus]`. Keep the guest's
+list as `[ *admin ]` until its key exists. From your host's shell with the
+personal `SOPS_AGE_KEY_FILE` set, run:
+
+```sh
+sops updatekeys secrets/hosts/damascus.yaml
+sudo darwin-rebuild switch --flake .#damascus
+```
+
+The host can now decrypt its secrets. For WSL, use
+`sudo nixos-rebuild switch --flake .#mothership` and the matching host YAML;
+the generated key has the same `/var/lib/sops-nix/key.txt` path.
+
+### Guest: generate, enroll, redeploy
+
+After the host rebuild succeeds, open the guest's foreground console:
+
+```sh
+microvm stop
+microvm run
+```
+
+Use `microvm run` for enrollment because the background `microvm start` command
+waits for OpenCode to become healthy. On the first guest boot, sops-nix generates
+`/var/lib/agent-state/sops/age-key.txt`, decryption fails, and OpenCode stays down.
+At the guest's root console, print the public recipient:
+
+```sh
+age-keygen -y /var/lib/agent-state/sops/age-key.txt
+```
+
+Record it and run `poweroff` in the guest to return to the Mac. Add the public
+recipient as `&vm_damascus` under `keys` in `.sops.yaml`, then change the guest
+file's recipient list to `age: [*admin, *vm_damascus]`. From the Mac, run:
+
+```sh
+sops updatekeys secrets/microvms/agent-sandbox-damascus.yaml
 sudo darwin-rebuild switch --flake .#damascus
 microvm restart
 ```
 
-The launcher builds/substitutes the new guest configuration. CI can build it
-without private keys; decryption happens inside the guest. OpenCode loads file
-references when it starts, so restart it after changing credential references.
-During an in-guest NixOS switch, sops-nix restarts the units listed in
-`restartUnits` when it installs changed secrets.
+The Mac rebuild updates the launcher's flake snapshot. The guest can now decrypt
+its secrets and start OpenCode. Its private identity stays on `agent-state.img`
+at mode `0600`; deleting that disk requires restoring the key or enrolling its
+replacement.
+
+The guest mounts `/var/lib/agent-state` in the initrd, before sops-nix's native
+key-generation activation hook. Regular secret decryption runs later through
+systemd, and OpenCode requires successful provisioning.
+
+## 6. Updates
+
+Edit the encrypted files with `sops`, track the changes, rebuild the relevant
+host, and restart its guest. You only repeat enrollment when adding or replacing
+an identity. CI builds require no private keys; decryption happens on the target
+machine.
+
+OpenCode loads file references when it starts, so restart it after changing
+credential references. During an in-guest NixOS switch, sops-nix restarts the
+units listed in `restartUnits` when it installs changed secrets. Restart consuming
+applications on macOS after updating their secrets.
 
 Inspect provisioning from the guest console without printing secret values:
 
