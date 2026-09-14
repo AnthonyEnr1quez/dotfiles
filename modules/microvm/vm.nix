@@ -12,6 +12,10 @@
   imports = [ ../common.nix ./secrets.nix ]
     ++ lib.optional (host != null) (../../hosts/darwin + "/${host}");
 
+  # Temporary Damascus guest enrollment test; remove after verifying decryption.
+  # The default guest YAML initially authorizes only the personal/admin key.
+  sops.secrets.bootstrap = lib.mkIf (host == "damascus") { };
+
   networking.hostName = "agent-sandbox";
   services.getty.autologinUser = "root";
 

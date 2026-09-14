@@ -210,6 +210,10 @@ in
         distributedBuilds = true;
         linux-builder = {
           enable = true;
+          # The default QEMU builder currently evaluates Linux-only virtiofsd
+          # for the Darwin host. Use Virtualization.framework on Apple Silicon.
+          # https://github.com/NixOS/nixpkgs/pull/552774
+          package = pkgs.darwin.linux-builder-vz;
           systems = [ "aarch64-linux" ];
 
           # Beefed-up builder VM for faster aarch64-linux builds while iterating.

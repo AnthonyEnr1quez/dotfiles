@@ -86,8 +86,11 @@ Configurations with no declared secrets do not generate a key. Start by
 encrypting the first files to your personal key so you can build the system
 before the machine identities exist.
 
-Replace the empty lists in `.sops.yaml` with your personal public recipient and
-exact file rules. Substitute a real `age1...` value:
+Preserve existing recipients and rules in `.sops.yaml` when enrolling more
+machines. Damascus's admin and machine recipients are already enrolled. For a
+fresh setup, start with the personal public recipient and exact file rules;
+the example below shows the initial admin-only stage. Substitute a real
+`age1...` value:
 
 ```yaml
 keys:

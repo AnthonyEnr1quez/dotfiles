@@ -11,3 +11,7 @@ Mac command: `darwin-rebuild switch --flake .`
 WSL command: `sudo nixos-rebuild switch --flake .`
 
 Secrets: [sops-nix setup, key enrollment, and OpenCode credentials](secrets/README.md).
+
+Damascus bootstrap: [microVM enrollment and verification](secrets/microvm-bootstrap.md).
+
+Work Mac handoff: [repeat enrollment on MacBook-Pro-2](notes/work-mac-enrollment.md).

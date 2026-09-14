@@ -35,14 +35,14 @@ path for the CLI. Empty user-secret configurations do not generate a key or star
 the decryption service.
 
 For Damascus's primary user, add this rule to `.sops.yaml`, using the existing
-`&admin` public recipient:
+`&admin_damascus` public recipient:
 
 ```yaml
 creation_rules:
   # Keep the existing host and guest rules too.
   - path_regex: ^secrets/users/damascus/ant\.yaml$
     key_groups:
-      - age: [*admin]
+      - age: [*admin_damascus]
 ```
 
 From the repository root on the Mac:

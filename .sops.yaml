@@ -1,4 +1,16 @@
-# Enroll the operator and each machine's PUBLIC age recipients here.
-# See secrets/README.md. No catch-all rule: each file gets its own recipients.
-keys: []
-creation_rules: []
+# Public recipients only. No catch-all rule: each file gets its own recipients.
+keys:
+  - &admin_damascus age1d9rvwhpg88qluqw6vwrcz7z3784a2y532p4vs09vhrys5x76lugqnume24
+  - &damascus age1k643h80jzwnztaqdt3cxe4edldqs3fg0mzrk9gekdg2e82mmqagswn433m
+  - &vm_damascus age14m3sy6xatm47znsvy3jjh3wkdl0nwkp3g8cervfnr9jqsm94049sr8hrrx
+
+creation_rules:
+  - path_regex: ^secrets/hosts/damascus\.yaml$
+    key_groups:
+      - age: [*admin_damascus, *damascus]
+  - path_regex: ^secrets/users/damascus/ant\.yaml$
+    key_groups:
+      - age: [*admin_damascus]
+  - path_regex: ^secrets/microvms/agent-sandbox-damascus\.yaml$
+    key_groups:
+      - age: [*admin_damascus, *vm_damascus]
