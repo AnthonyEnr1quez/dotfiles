@@ -3,6 +3,9 @@ keys:
   - &admin_damascus age1d9rvwhpg88qluqw6vwrcz7z3784a2y532p4vs09vhrys5x76lugqnume24
   - &damascus age1k643h80jzwnztaqdt3cxe4edldqs3fg0mzrk9gekdg2e82mmqagswn433m
   - &vm_damascus age14m3sy6xatm47znsvy3jjh3wkdl0nwkp3g8cervfnr9jqsm94049sr8hrrx
+  - &admin_MacBook-Pro-2 age10gj6wvujafvuzvj3j8hyv5xwjt5npm936ayfxms5lajacecajydsa68vlq
+  - &MacBook-Pro-2 age1njcz2hqn9mgxen3hjmkwl4a9jp7z3e6ju07q6nclmnptecdf3s3qdzcutt
+  - &vm_MacBook-Pro-2 age1nsct2jlgqhnfdamr3q7xdr06smn77s280kd3ewjrfk47caayk3hs4ndkws
 
 creation_rules:
   - path_regex: ^secrets/hosts/damascus\.yaml$
@@ -14,3 +17,12 @@ creation_rules:
   - path_regex: ^secrets/microvms/agent-sandbox-damascus\.yaml$
     key_groups:
       - age: [*admin_damascus, *vm_damascus]
+  - path_regex: ^secrets/hosts/MacBook-Pro-2\.yaml$
+    key_groups:
+      - age: [*admin_MacBook-Pro-2, *MacBook-Pro-2]
+  - path_regex: ^secrets/users/MacBook-Pro-2/anthony\.enriquez\.yaml$
+    key_groups:
+      - age: [*admin_MacBook-Pro-2]
+  - path_regex: ^secrets/microvms/agent-sandbox-MacBook-Pro-2\.yaml$
+    key_groups:
+      - age: [*admin_MacBook-Pro-2, *vm_MacBook-Pro-2]

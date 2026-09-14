@@ -125,9 +125,9 @@ sudo age-keygen -y /var/lib/sops-nix/key.txt
 ```
 
 Collect only the public `age1...` recipients, labeled user/admin and machine.
-Register them as `admin_work` and `work_mac` in `.sops.yaml`. Update the temporary
-rule to `[ *admin_work, *work_mac ]` and freshly encrypt the same dummy value to
-those recipients. No old private key or `sops updatekeys` is necessary when
+Register them as `admin_MacBook-Pro-2` and `MacBook-Pro-2` in `.sops.yaml`.
+Update the temporary rule to `[ *admin_MacBook-Pro-2, *MacBook-Pro-2 ]` and freshly
+encrypt the same dummy value to those recipients. No old private key or `sops updatekeys` is necessary when
 replacing a known dummy value.
 
 Repeat the Darwin switch. Then ask the user to verify both provisioning layers:
@@ -146,7 +146,7 @@ identities and their public registrations.
 
 Use the guest's normal ciphertext path from the table. Add an exact rule for
 `^secrets/microvms/agent-sandbox-MacBook-Pro-2\.yaml$`, initially authorizing only
-`admin_work`. Encrypt this known value to that public recipient:
+`admin_MacBook-Pro-2`. Encrypt this known value to that public recipient:
 
 ```yaml
 bootstrap: Non-sensitive work microVM bootstrap test.
@@ -192,9 +192,9 @@ At the guest root console:
 age-keygen -y /var/lib/agent-state/sops/age-key.txt
 ```
 
-Collect that public recipient as `work_vm`, then run `poweroff` in the guest.
+Collect that public recipient as `vm_MacBook-Pro-2`, then run `poweroff` in the guest.
 Register the recipient in `.sops.yaml` and change the work guest's rule to
-`[ *admin_work, *work_vm ]`. Freshly encrypt the known dummy value to both keys.
+`[ *admin_MacBook-Pro-2, *vm_MacBook-Pro-2 ]`. Freshly encrypt the known dummy value to both keys.
 The Mac's machine key does not need access to the guest's file.
 
 Rebuild the host again and run `microvm run`. In the guest, verify:
@@ -231,9 +231,9 @@ The intended work-machine recipient rules are:
 
 | File | Recipients |
 | --- | --- |
-| `secrets/hosts/MacBook-Pro-2.yaml` | `admin_work`, `work_mac` |
-| `secrets/users/MacBook-Pro-2/anthony.enriquez.yaml` | `admin_work` |
-| `secrets/microvms/agent-sandbox-MacBook-Pro-2.yaml` | `admin_work`, `work_vm` |
+| `secrets/hosts/MacBook-Pro-2.yaml` | `admin_MacBook-Pro-2`, `MacBook-Pro-2` |
+| `secrets/users/MacBook-Pro-2/anthony.enriquez.yaml` | `admin_MacBook-Pro-2` |
+| `secrets/microvms/agent-sandbox-MacBook-Pro-2.yaml` | `admin_MacBook-Pro-2`, `vm_MacBook-Pro-2` |
 
 Do not automatically grant the personal Mac's admin key access to real work
 credentials. Confirm any cross-machine admin/recovery access with the user.
