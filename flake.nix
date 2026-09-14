@@ -83,8 +83,6 @@
         , stable ? inputs.stable # # TODO is this needed with no overlays?
         , baseModules ? [
             inputs.sops-nix.darwinModules.sops
-            ./modules/secrets
-            (./secrets/hosts + "/${host}.nix")
             home-manager.darwinModules.home-manager
             (
               { pkgs, config, inputs, ... }:
@@ -120,8 +118,6 @@
         , stable ? inputs.stable
         , baseModules ? [
             inputs.sops-nix.nixosModules.sops
-            ./modules/secrets
-            (./secrets/hosts + "/${host}.nix")
             home-manager.nixosModules.home-manager
             (
               { pkgs, config, inputs, ... }:
@@ -151,8 +147,6 @@
           specialArgs = { inherit self inputs host; };
           modules = [
             inputs.sops-nix.nixosModules.sops
-            ./modules/secrets
-            ./modules/microvm/secrets.nix
             microvm.nixosModules.microvm
             home-manager.nixosModules.home-manager
             ./modules/microvm/vm.nix

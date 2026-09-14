@@ -4,18 +4,28 @@ Use sops-nix with a separate age identity for each host and microVM. Keep your
 personal editing/recovery identity on the host. Encrypt each machine's YAML to
 that machine's public recipient and your personal public recipient.
 
-The flake imports these declaration modules:
+Keep application secret declarations and their Home Manager consumers in the
+existing host modules. Each microVM imports `hosts/darwin/<host>/default.nix`, so
+one declaration configures both the Mac and its guest. Nix evaluates the module
+with each machine's own `config`, primary user, and SOPS settings.
 
-| Machine | Module and matching encrypted file |
+| Machine | Encrypted file |
 | --- | --- |
-| `damascus` | `secrets/hosts/damascus.{nix,yaml}` |
-| `MacBook-Pro-2` | `secrets/hosts/MacBook-Pro-2.{nix,yaml}` |
-| `mothership` | `secrets/hosts/mothership.{nix,yaml}` |
-| Damascus guest | `secrets/microvms/agent-sandbox-damascus.{nix,yaml}` |
-| Work guest | `secrets/microvms/agent-sandbox-MacBook-Pro-2.{nix,yaml}` |
+| `damascus` | `secrets/hosts/damascus.yaml` |
+| `MacBook-Pro-2` | `secrets/hosts/MacBook-Pro-2.yaml` |
+| `mothership` | `secrets/hosts/mothership.yaml` |
+| Damascus guest | `secrets/microvms/agent-sandbox-damascus.yaml` |
+| Work guest | `secrets/microvms/agent-sandbox-MacBook-Pro-2.yaml` |
 
-Each `.nix` module starts empty. Add the encrypted YAML when you declare the first
-secret. Empty configurations can build and boot before key enrollment.
+Put Mac/guest shared declarations in `hosts/darwin/<host>/default.nix`, Mac-only
+declarations in `hosts/darwin/<host>/darwin.nix`, and WSL declarations in
+`hosts/linux/mothership/default.nix`. Guest-only configuration belongs in a module
+imported by `modules/microvm/vm.nix`; use its `host` argument for per-guest choices.
+
+Both machines need the same YAML keys for shared declarations, but can use
+different credential values. Add their encrypted files before deploying the
+declarations. Configurations without declared secrets can build and boot before
+key enrollment.
 
 ## 1. Install the plumbing
 
@@ -118,38 +128,52 @@ credentials out of guest files.
 
 ## 5. Add static OpenCode credentials
 
-From the repository root on your host, open the guest's encrypted file:
+From the repository root on your host, open both encrypted files for the pair:
 
 ```sh
+sops secrets/hosts/damascus.yaml
 sops secrets/microvms/agent-sandbox-damascus.yaml
 ```
 
-Enter your credentials in the editor, for example an `anthropic-api-key` YAML
-string. SOPS encrypts the values when you save. Then edit the matching `.nix`
-module:
+Enter an `anthropic-api-key` YAML string in each file, using the credential for
+that machine. SOPS encrypts the values when you save. Add the declaration and
+consumer to `hosts/darwin/damascus/default.nix`:
 
 ```nix
 { config, ... }:
 {
-  sops.secrets.anthropic-api-key = {
-    restartUnits = [ "opencode.service" ];
-  };
+  sops.secrets.anthropic-api-key.owner = config.user.name;
 
   hm.programs.opencode.settings.provider.anthropic.options.apiKey =
     "{file:${config.sops.secrets.anthropic-api-key.path}}";
 }
 ```
 
-OpenCode reads `/run/secrets/anthropic-api-key` at startup. Nix stores the file
+OpenCode reads `/run/secrets/anthropic-api-key` at startup on each machine. The
+owner resolves to your user on the Mac and `root` in the VM. Nix stores the file
 reference in its generated configuration. Use `.path` and OpenCode's `{file:...}`
 syntax rather than reading plaintext with `builtins.readFile`.
 
-### Remote MCP tokens
-
-Add `remote-mcp-token` to the encrypted YAML, declare it under `sops.secrets` with
-the same `restartUnits`, and add the consumer in that machine's module:
+The VM defaults `restartUnits` to `[ "opencode.service" ]` for regular secrets.
+Keep this Linux-only option out of shared Mac/guest declarations. To opt out or
+choose other consumers, override the list in guest-only configuration:
 
 ```nix
+sops.secrets.some-other-secret.restartUnits = [ ];
+```
+
+An explicit list replaces the default; include `"opencode.service"` if it should
+restart alongside another service. Early `neededForUsers` secrets get no default
+restart units. Restart host applications yourself after changing their secrets.
+
+### Remote MCP tokens
+
+Add `remote-mcp-token` to both encrypted YAML files and add this declaration and
+consumer to the shared host module:
+
+```nix
+sops.secrets.remote-mcp-token.owner = config.user.name;
+
 hm.programs.opencode.settings.mcp.example = {
   type = "remote";
   url = "https://mcp.example.com/mcp";
@@ -167,9 +191,12 @@ when enabling it for OpenCode.
 
 ### Local MCP tokens
 
-After declaring `local-mcp-token`, pass its value to the child process:
+Add `local-mcp-token` to both encrypted YAML files, then declare it and pass its
+value to the child process in the shared host module:
 
 ```nix
+sops.secrets.local-mcp-token.owner = config.user.name;
+
 hm.programs.opencode.settings.mcp.example = {
   type = "local";
   command = [ "example-mcp-server" ];
@@ -182,11 +209,13 @@ Install the actual MCP command and use the environment variable it expects.
 
 ### Credentials required in the OpenCode server environment
 
-For software that needs an environment variable on the server itself, encrypt
-an environment file as a YAML multiline string named `opencode-env`. Declare it
-as a secret with `restartUnits = [ "opencode.service" ]`, then set:
+For software that needs an environment variable on the guest server itself,
+encrypt an environment file as a YAML multiline string named `opencode-env` in
+the guest YAML. Add the following in guest-only configuration:
 
 ```nix
+sops.secrets.opencode-env = { };
+
 systemd.services.opencode.serviceConfig.EnvironmentFile =
   config.sops.secrets.opencode-env.path;
 ```
@@ -196,11 +225,11 @@ not load your interactive shell's environment.
 
 ### Host applications
 
-Declare host secrets in `secrets/hosts/<host>.nix` and use the same `.path`
-references. For applications running as your primary user, set
-`owner = config.user.name` on the secret. NixOS supports `restartUnits`;
-nix-darwin requires you to restart the consuming application after updating its
-credentials.
+For Mac-only applications, declare secrets in `hosts/darwin/<host>/darwin.nix`
+and use the same `.path` references. For applications running as your primary
+user, set `owner = config.user.name` on the secret. On WSL, use
+`hosts/linux/mothership/default.nix` and set any needed service `restartUnits`
+there; only the OpenCode microVMs get automatic restart defaults.
 
 ### OAuth and interactive logins
 
@@ -210,7 +239,8 @@ Keep refreshed OAuth state there rather than managing it as static SOPS data.
 
 ## 6. Deploy and update
 
-Track the encrypted YAML and declaration changes, then rebuild the relevant host.
+Track the encrypted YAML files and shared host-module changes, then rebuild the
+relevant host.
 For a Mac and its guest:
 
 ```sh
