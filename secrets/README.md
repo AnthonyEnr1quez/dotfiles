@@ -4,6 +4,11 @@ Use sops-nix with a separate age identity for each host and microVM. Keep your
 personal editing/recovery identity on the host. Encrypt each machine's YAML to
 that machine's public recipient and your personal public recipient.
 
+Real machines also have the Home Manager sops-nix module. It uses your personal
+key for user-level secrets; system-level sops-nix uses the separate machine key.
+MicroVMs use only system-level sops-nix. See
+[Home Manager secrets](home-manager.md) for user declarations and enrollment.
+
 Keep application secret declarations and their Home Manager consumers in the
 existing host modules. Each microVM imports `hosts/darwin/<host>/default.nix`, so
 one declaration configures both the Mac and its guest. Nix evaluates the module
@@ -61,9 +66,17 @@ The last command prints the public `age1...` recipient. New login shells get
 `SOPS_AGE_KEY_FILE` from Home Manager, including on macOS. Back up the private
 editing key in your password manager or another secure backup.
 
+This is also Home Manager's decryption identity. Its `generateKey` option reuses
+an existing key and can create a missing one once user secrets are declared.
+For your first-ever admin identity, use the commands above; they let you encrypt
+the initial files before deploying either secret manager. Each newly generated
+user key is independent. Grant it admin access by adding its public recipient
+to the relevant files, or provision an existing personal key on another trusted
+machine.
+
 ## 3. Prepare recipient rules
 
-The shared configuration enables `sops.age.generateKey`. On a machine's first
+The system-level configuration enables `sops.age.generateKey`. On a machine's first
 deployment with declared secrets, sops-nix generates its private key if absent.
 It then attempts decryption. For a new identity, that first attempt fails until
 you enroll the public recipient and re-encrypt the file in step 5. Subsequent

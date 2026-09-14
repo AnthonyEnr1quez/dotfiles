@@ -83,6 +83,7 @@
         , stable ? inputs.stable # # TODO is this needed with no overlays?
         , baseModules ? [
             inputs.sops-nix.darwinModules.sops
+            ./modules/secrets/home-manager.nix
             home-manager.darwinModules.home-manager
             (
               { pkgs, config, inputs, ... }:
@@ -118,6 +119,7 @@
         , stable ? inputs.stable
         , baseModules ? [
             inputs.sops-nix.nixosModules.sops
+            ./modules/secrets/home-manager.nix
             home-manager.nixosModules.home-manager
             (
               { pkgs, config, inputs, ... }:
