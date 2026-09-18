@@ -37,7 +37,7 @@ jobs:
     # Validates each aarch64-linux agent-sandbox micro VM system closure on PRs.
     # The vfkit runners are aarch64-darwin and are exercised in the Cachix
     # workflow post-merge (they need the linux closures in cache first).
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     env:
       VERBOSE_FLAGS: ${{ inputs.verbose == true && '--verbose --print-build-logs' || '' }}
     steps:
