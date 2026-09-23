@@ -120,9 +120,9 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   survive `poweroff`. The MacBook-Pro-2 host and work VM declare their
   `us-docker.pkg.dev` gcloud credential-helper mapping at activation; the
   Darwin host also selects its OrbStack Docker context.
-  The VM-specific GitHub SSH identity (`~/.ssh/id_ed25519_github` and its
-  public key) and `~/.ssh/known_hosts` are also persisted individually; SSH
-  configuration remains ephemeral.
+  The guest's SOPS age identity persists at
+  `/var/lib/agent-state/sops/age-key.txt`. SSH configuration, keys, and known-hosts
+  state are no longer provisioned or persisted by the VM configuration.
 - `~/.local/share/microvm/dev-state.img` — persistent development scratch
   space and caches. It backs `TMPDIR`, `XDG_CACHE_HOME`, and Go's module and
   build caches, plus Docker images, containers, and volumes, so development
@@ -131,10 +131,11 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   and console output.
 - `~/.local/share/microvm/runner` — GC root for the running VM closure.
 
-Note: OpenCode's `auth.json` (API credentials) and gcloud's refresh credentials
-live in the persisted agent state, as does the VM-specific GitHub private key.
-They are separate from the host's credential stores, but the "no secrets in the
-VM" property excludes these VM-specific logins and key.
+Note: OpenCode's login state, gcloud's refresh credentials, and the SOPS age
+identity live in persisted agent state. SOPS provisions the guest's API tokens
+at runtime, including the GitHub token used by `gh` and Git-over-HTTPS. These
+guest credentials are separate from the host's credential stores; the VM
+boundary does not hide guest credentials from guest root.
 
 ## Shares
 
@@ -157,9 +158,13 @@ remote behavior; use `opencode-local` to run OpenCode directly on macOS.
 
 Keep the same directory open in your host editor: you see edits live, intervene
 alongside the agent, and finished work is already in the host repo. Commit,
-branch, and push with normal git habits. The VM has no host SSH credentials, so
-Git pushes normally happen host-side unless its VM-specific GitHub key is
-configured for repository access.
+branch, and push with normal git habits. The Mac uses SSH for GitHub, while the
+VM rewrites GitHub SSH URLs to HTTPS and uses the SOPS-managed `gh` token. Guest
+pushes require the token's repository write permission; stored remotes and the
+shared checkout remain unchanged.
 
-The VM's git identity can commit but cannot sign (no keys in the VM); re-sign
-on the host if you need signed history.
+Git signing is disabled in the VM; re-sign on the host if you need signed history.
+
+For existing disks, follow the [one-time SSH cleanup](../../notes/github-cli-auth.md#retire-guest-ssh-state)
+after revoking the old guest keys. Removing persistence rules does not delete
+their previous contents.

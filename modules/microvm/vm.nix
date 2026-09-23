@@ -136,14 +136,8 @@
       "d /var/lib/dev-state/cache 0700 root root -"
       "d /var/lib/dev-state/go 0700 root root -"
       "d /var/lib/dev-state/docker 0710 root root -"
-      "d /root/.ssh 0700 root root -"
-      "d /var/lib/agent-state/github-ssh 0700 root root -"
-      "L+ /root/.ssh/id_ed25519_github - - - - /var/lib/agent-state/github-ssh/id_ed25519_github"
-      "L+ /root/.ssh/id_ed25519_github.pub - - - - /var/lib/agent-state/github-ssh/id_ed25519_github.pub"
-      "L+ /root/.ssh/known_hosts - - - - /var/lib/agent-state/github-ssh/known_hosts"
     ]
-    # opencode: sessions/history/db; gcloud: configs and refresh credentials;
-    # github-ssh: VM-specific identity key only
+    # opencode: sessions/history/db; gcloud: configs and refresh credentials
     ++ persist "opencode" "/root/.local/share/opencode"
     ++ persist "gcloud" "/root/.config/gcloud";
 
@@ -222,7 +216,8 @@
   };
   # The credential symlinks under /root are denied by the shared OpenCode
   # policy. Deny their VM-specific backing paths too, so direct paths cannot
-  # bypass those file-tool guards.
+  # bypass those file-tool guards. Keep the legacy GitHub SSH paths denied
+  # until their files have been removed manually from existing disks.
   hm.programs.opencode.settings.permission = {
     read = {
       "/var/lib/agent-state/gcloud/**" = "deny";
@@ -270,9 +265,11 @@
     settings.git_protocol = "https";
   };
 
-  # The shared git module enables SSH commit signing with a key that does not
-  # exist in the VM. Disable signing so the agent can commit; re-sign on the
-  # host if signed history is needed.
+  # Guests use HTTPS tokens and keep no managed SSH configuration or signing key.
+  hm.programs.ssh.enable = lib.mkForce false;
+  hm.programs.git.signing.key = lib.mkForce null;
+
+  # Re-sign on the host if signed history is needed.
   hm.programs.git.settings = {
     commit.gpgSign = lib.mkForce false;
     tag.gpgSign = lib.mkForce false;

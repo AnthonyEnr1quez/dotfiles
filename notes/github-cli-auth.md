@@ -110,7 +110,37 @@ file. If either was set previously, remove that override for this test. Do not
 print those variables, run `gh auth token`, or print the managed credentials file
 to inspect authentication. `gh api user --jq .login` prints only the public login.
 
-After HTTPS is verified, revoke the old VM-specific GitHub SSH keys on GitHub if
-you want the scoped tokens to be the guests' only GitHub credentials. The
-configuration deliberately leaves the persisted guest SSH files untouched
-during migration. Do not revoke the Macs' keys; the Macs still use SSH.
+## Retire guest SSH state
+
+The VMs no longer manage Home Manager SSH configuration, a Git signing key, or
+SSH persistence links. The Macs retain their SSH configuration and signing keys.
+This removes managed SSH state; it does not prevent an SSH client from being
+available as a dependency or someone deliberately running one.
+
+After HTTPS access works, identify any old guest key before deleting its files.
+Inside each guest that has one:
+
+```sh
+ssh-keygen -lf /var/lib/agent-state/github-ssh/id_ed25519_github.pub
+```
+
+Match the fingerprint in GitHub's **Settings > SSH and GPG keys**, or the
+repository's **Settings > Deploy keys** if it was registered as a deploy key.
+Revoke only guest-specific keys. Compare against the Mac's public key if unsure;
+do not revoke a key still used by the Mac. Damascus's guest had no keypair at
+these paths when checked; inspect the work guest separately.
+
+Rebuild the Mac and restart its VM to apply the configuration cleanup. Then run
+this once **inside each microVM**, not on a Mac:
+
+```sh
+rm -rf -- /root/.ssh /var/lib/agent-state/github-ssh
+```
+
+This removes the old SSH configuration, symlinks, keys, and known-hosts data.
+It does not touch `/var/lib/agent-state/sops`, the managed `gh` credentials, or
+the host's SSH files. The new configuration no longer recreates those SSH paths.
+Legacy OpenCode read-deny rules remain in place for disks not yet cleaned up.
+
+Removing declarations alone does not delete the old persistent files. Revocation
+is what removes GitHub access for any copies retained in older disks or backups.
