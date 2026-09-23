@@ -167,10 +167,10 @@ hm.programs.opencode.settings.mcp.example = {
 ```
 
 Replace the example URL and authentication header with the server's requirements.
-For servers already declared by `hm.programs.mcp`, an entry in
-`hm.programs.opencode.settings.mcp.<name>` replaces the entire generated server
-entry. Include its `type`, `url` (or `command`), credentials, and `enabled = true`
-when enabling it for OpenCode.
+MCP servers are configured directly in `programs.opencode.settings.mcp` in
+`modules/home-manager/ai/mcp.nix`. Keep each server's `type`, `url` (or `command`),
+credentials, and `enabled` setting together there. These are native OpenCode
+entries; no shared MCP adapter is involved.
 
 ### Local MCP tokens
 

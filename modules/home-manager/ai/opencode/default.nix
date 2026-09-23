@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, osConfig, pkgs, ... }:
 let
   name = "opencode";
   cfg = config.${name};
@@ -55,7 +55,6 @@ in
       ripgrep.enable = true; # dependency
       opencode = {
         enable = true;
-        enableMcpIntegration = true;
 
         skills = {
           alloydb-basics = "${google-skills}/skills/cloud/alloydb-basics";
@@ -70,6 +69,16 @@ in
         tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
 
         settings = {
+          # Check the declaration, not a runtime file that is absent in CI.
+          provider = {
+            openai = mkIf (osConfig.sops.secrets ? openai-api-key) {
+              options.apiKey = "{file:${osConfig.sops.secrets.openai-api-key.path}}";
+            };
+            anthropic = mkIf (osConfig.sops.secrets ? anthropic-api-key) {
+              options.apiKey = "{file:${osConfig.sops.secrets.anthropic-api-key.path}}";
+            };
+          };
+
           server = lib.mkIf cfg.server {
             hostname = "0.0.0.0";
             port = 4096;

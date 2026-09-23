@@ -246,6 +246,22 @@ by both the Mac and guest. Use `hm.sops` in the Mac-only module for user-only
 credentials. Each provisioning layer has its own `config.sops.secrets` namespace.
 Ask which providers/MCP servers need credentials before adding consumers.
 
+OpenAI and Anthropic provider wiring lives in the shared OpenCode module. Their
+system secrets are declared in `hosts/darwin/shared.nix`, which both Macs and
+their guests import. All four encrypted files need `openai-api-key` and
+`anthropic-api-key`; no per-host provider setting is needed.
+
+The work host module also declares `honeycomb-api-key`, `linear-api-key`, and
+`postman-api-key`. Each MCP server declaration checks for its own system secret
+and supplies a runtime file reference in its Bearer header, with OAuth disabled.
+Servers without declared credentials are omitted. OpenCode is the current MCP
+consumer, so these entries live directly in `programs.opencode.settings.mcp` in
+`modules/home-manager/ai/mcp.nix`. There is no shared MCP adapter: `enabled`,
+`type`, and `oauth` are native OpenCode fields. The `hm.mcp.enable` switch remains.
+Honeycomb requires a management key formatted as `KEY_ID:KEY_SECRET`, with MCP
+and Environments read permissions. The configured Honeycomb and Postman endpoints
+are US endpoints; select their EU endpoints if the account requires them.
+
 Run formatting and `nix flake check --no-build path:.`, evaluate both Darwin
 configurations explicitly, and build the work guest's
 `config.system.build.sops-nix-manifest` on Linux when available. Check that the

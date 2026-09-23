@@ -2,6 +2,7 @@
   host.name = host;
 
   imports = [
+    ./shared.nix
     ./${host}
     ./${host}/darwin.nix
   ];

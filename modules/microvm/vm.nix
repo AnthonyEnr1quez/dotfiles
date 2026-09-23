@@ -9,7 +9,7 @@
 # 192.168.64.2 DHCP address.
 { lib, pkgs, config, host, ... }:
 {
-  imports = [ ../common.nix ./secrets.nix ]
+  imports = [ ../common.nix ./secrets.nix ../../hosts/darwin/shared.nix ]
     ++ lib.optional (host != null) (../../hosts/darwin + "/${host}");
 
   networking.hostName = "agent-sandbox";

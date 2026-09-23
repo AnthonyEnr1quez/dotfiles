@@ -58,6 +58,12 @@ let
   ];
 in
 {
+  sops.secrets = {
+    honeycomb-api-key.owner = config.user.name;
+    linear-api-key.owner = config.user.name;
+    postman-api-key.owner = config.user.name;
+  };
+
   hm = {
     mcp.enable = true;
 
