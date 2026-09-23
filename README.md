@@ -15,3 +15,5 @@ Secrets: [sops-nix setup, key enrollment, and OpenCode credentials](secrets/READ
 Damascus bootstrap: [microVM enrollment and verification](secrets/microvm-bootstrap.md).
 
 Work Mac handoff: [repeat enrollment on MacBook-Pro-2](notes/work-mac-enrollment.md).
+
+GitHub authentication: [host SSH, guest HTTPS, and SOPS-managed gh tokens](notes/github-cli-auth.md).

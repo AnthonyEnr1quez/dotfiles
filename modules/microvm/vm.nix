@@ -246,6 +246,7 @@
 
     environment = {
       HOME = "/root";
+      GH_CONFIG_DIR = "${config.home-manager.users.root.xdg.configHome}/gh";
       PATH = lib.mkForce "/etc/profiles/per-user/root/bin:/run/current-system/sw/bin";
       TMPDIR = "/var/lib/dev-state/tmp";
       XDG_CACHE_HOME = "/var/lib/dev-state/cache";
@@ -264,12 +265,26 @@
     };
   };
 
+  hm.programs.gh = {
+    gitCredentialHelper.enable = true;
+    settings.git_protocol = "https";
+  };
+
   # The shared git module enables SSH commit signing with a key that does not
   # exist in the VM. Disable signing so the agent can commit; re-sign on the
   # host if signed history is needed.
   hm.programs.git.settings = {
     commit.gpgSign = lib.mkForce false;
     tag.gpgSign = lib.mkForce false;
+
+    # Override the host's inverse rewrite without editing shared repo remotes.
+    url = {
+      "git@github.com:".insteadOf = lib.mkForce [ ];
+      "https://github.com/".insteadOf = [
+        "git@github.com:"
+        "ssh://git@github.com/"
+      ];
+    };
   };
 
   # Exit the sandbox by running `poweroff` at its shell prompt.
