@@ -372,7 +372,8 @@ in
               "opencode agent list" = "allow";
               "opencode debug --help" = "allow";
               "opencode debug agent *" = "allow";
-              "opencode debug config" = "allow";
+              # Prints resolved credentials, not just their file references.
+              "opencode debug config*" = "deny";
               "opencode debug info" = "allow";
               "opencode debug paths" = "allow";
               "opencode debug skill" = "allow";

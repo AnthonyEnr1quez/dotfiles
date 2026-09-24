@@ -7,15 +7,11 @@
     github-token.owner = config.user.name;
   };
 
-  # JSON is valid YAML. Only the placeholder enters the store; sops-nix renders
-  # the token at activation, and gh reads it without a wrapper or token env var.
+  # gh accepts JSON as YAML; sops-nix substitutes the token at activation.
   sops.templates."gh-hosts.yml" = {
     owner = config.user.name;
     content = builtins.toJSON {
-      "github.com" = {
-        oauth_token = config.sops.placeholder.github-token;
-        git_protocol = config.home-manager.users.${config.user.name}.programs.gh.settings.git_protocol;
-      };
+      "github.com".oauth_token = config.sops.placeholder.github-token;
     };
   };
 }

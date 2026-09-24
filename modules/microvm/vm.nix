@@ -214,20 +214,14 @@
     sandboxed = true;
     server = true;
   };
-  # The credential symlinks under /root are denied by the shared OpenCode
-  # policy. Deny their VM-specific backing paths too, so direct paths cannot
-  # bypass those file-tool guards. Keep the legacy GitHub SSH paths denied
-  # until their files have been removed manually from existing disks.
+  # Protect persistent credentials as well as their home-directory symlinks.
   hm.programs.opencode.settings.permission = {
     read = {
       "/var/lib/agent-state/gcloud/**" = "deny";
-      "/var/lib/agent-state/github-ssh/**" = "deny";
     };
     external_directory = {
       "/var/lib/agent-state/gcloud" = "deny";
       "/var/lib/agent-state/gcloud/*" = "deny";
-      "/var/lib/agent-state/github-ssh" = "deny";
-      "/var/lib/agent-state/github-ssh/*" = "deny";
     };
   };
   hm.herdr.enable = false;
@@ -241,7 +235,6 @@
 
     environment = {
       HOME = "/root";
-      GH_CONFIG_DIR = "${config.home-manager.users.root.xdg.configHome}/gh";
       PATH = lib.mkForce "/etc/profiles/per-user/root/bin:/run/current-system/sw/bin";
       TMPDIR = "/var/lib/dev-state/tmp";
       XDG_CACHE_HOME = "/var/lib/dev-state/cache";
@@ -269,7 +262,6 @@
   hm.programs.ssh.enable = lib.mkForce false;
   hm.programs.git.signing.key = lib.mkForce null;
 
-  # Re-sign on the host if signed history is needed.
   hm.programs.git.settings = {
     commit.gpgSign = lib.mkForce false;
     tag.gpgSign = lib.mkForce false;
