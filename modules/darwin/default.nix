@@ -20,9 +20,13 @@
     "${config.user.name}"
   ];
 
-  # NOTE: Keep these in sync with flake.nix nixConfig and nix.settings in
-  # modules/microvm/vm.nix.
   nix.settings = {
+    # Fetch CI-built Linux microVM outputs even when their derivations disable
+    # substitution; the Darwin host cannot build these locally.
+    always-allow-substitutes = true;
+
+    # Keep caches and keys in sync with flake.nix nixConfig and
+    # nix.settings in modules/microvm/vm.nix.
     substituters = [
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
