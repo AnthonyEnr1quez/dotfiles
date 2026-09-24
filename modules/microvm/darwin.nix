@@ -43,7 +43,7 @@ let
         ;;
     esac
 
-    if ! ${lib.getExe pkgs.curl} --fail --silent \
+    if ! ${lib.getExe pkgs.curl} -q --noproxy '*' --connect-timeout 2 --max-time 3 --fail --silent \
       http://${guestAddress}:${toString opencodePort}/global/health >/dev/null; then
       ${microvm}/bin/microvm start
     fi
@@ -86,7 +86,7 @@ let
     }
 
     healthy() {
-      ${lib.getExe pkgs.curl} --fail --silent \
+      ${lib.getExe pkgs.curl} -q --noproxy '*' --connect-timeout 2 --max-time 3 --fail --silent \
         http://${guestAddress}:${toString opencodePort}/global/health >/dev/null
     }
 
@@ -210,6 +210,11 @@ in
         distributedBuilds = true;
         linux-builder = {
           enable = true;
+          # The default QEMU builder currently evaluates Linux-only virtiofsd
+          # for the Darwin host. Use Virtualization.framework on Apple Silicon.
+          # https://github.com/NixOS/nixpkgs/pull/552774
+          # Fixed? Leaving for future reference https://github.com/NixOS/nixpkgs/pull/562444
+          # package = pkgs.darwin.linux-builder-vz;
           systems = [ "aarch64-linux" ];
 
           # Beefed-up builder VM for faster aarch64-linux builds while iterating.

@@ -47,6 +47,10 @@
       url = "github:microvm-nix/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nur = {
       url = "github:nix-community/NUR";
       inputs = {
@@ -78,6 +82,8 @@
         , nixpkgs ? inputs.nixpkgs
         , stable ? inputs.stable # # TODO is this needed with no overlays?
         , baseModules ? [
+            inputs.sops-nix.darwinModules.sops
+            ./modules/secrets/home-manager.nix
             home-manager.darwinModules.home-manager
             (
               { pkgs, config, inputs, ... }:
@@ -112,6 +118,8 @@
         , nixpkgs ? inputs.nixpkgs
         , stable ? inputs.stable
         , baseModules ? [
+            inputs.sops-nix.nixosModules.sops
+            ./modules/secrets/home-manager.nix
             home-manager.nixosModules.home-manager
             (
               { pkgs, config, inputs, ... }:
@@ -140,6 +148,7 @@
           system = "aarch64-linux";
           specialArgs = { inherit self inputs host; };
           modules = [
+            inputs.sops-nix.nixosModules.sops
             microvm.nixosModules.microvm
             home-manager.nixosModules.home-manager
             ./modules/microvm/vm.nix

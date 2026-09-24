@@ -1,5 +1,5 @@
 { self, inputs, config, lib, pkgs, ... }: {
-  imports = [ ./primary.nix ];
+  imports = [ ./primary.nix ./secrets ];
 
   programs = {
     fish.enable = true;

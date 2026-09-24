@@ -15,11 +15,11 @@ Based on <https://abhinavsarkar.net/notes/2026-microvm-nix/>.
 
 ## Why
 
-The agent runs **inside** the VM. Everything it *executes* — builds, tests,
-arbitrary commands, dependency code — is caged. It cannot reach secrets
-(`~/.ssh`, tokens, keychains), the rest of the host filesystem, or the system;
-networking is NAT-only, with only the OpenCode port allowed through the guest
-firewall for host attachment.
+The agent runs builds, tests, and other commands inside the VM. It cannot access
+unshared host paths such as the Mac's `~/.ssh` or keychain. Guest root can access
+the credentials provisioned to the VM and any files under the shared projects
+directory. Networking is NAT-only, with the OpenCode port allowed through the
+guest firewall for host attachment.
 
 This closes the enforcement gap of agent-level permission configs: those gate
 what the agent *asks* to do, but anything it legitimately shells out to (a
@@ -34,10 +34,9 @@ in**:
 - `~/projects` is shared **read-write**. Agents work directly in your real
   repos — the same working copy you have open in your editor. You watch and
   edit alongside the agent, exactly as with a host-side agent session.
-- **Git is the undo layer, the VM is the execution jail.** The sandbox does
-  not protect your repos from the agent — it protects everything *else* from
-  whatever the agent runs. Repo safety comes from git (commit/push before
-  sessions, reflog, remotes) and from you watching the session.
+- The VM does not protect the shared repositories from the agent. Git helps
+  recover ordinary edits, but the guest can also modify or delete `.git`.
+  Keep an independent remote or backup for recovery.
 
 A read-only share would be cosmetic anyway: vfkit's virtio-fs has no
 host-side read-only flag, so `ro` could only be a guest mount option, which
@@ -46,9 +45,9 @@ model instead of implying a boundary that doesn't exist.
 
 ### Consequences worth knowing
 
-- **Commit or stash before letting an agent loose.** Uncommitted work in a
-  repo the agent touches is destructible; committed work is always
-  recoverable via reflog.
+- **Commit or stash before letting an agent loose**, and push or back up work
+  that must survive loss of the shared checkout. Reflogs help only while the
+  repository and its objects remain available.
 - **`.git` dirs are agent-writable**, including hooks and config
   (`core.hooksPath`, `core.fsmonitor`), which execute host-side when *you*
   run git in that repo. After an unattended/suspect session, glance at
@@ -85,8 +84,9 @@ launchers. They build that host's matching guest. The guest logs in as `root`
 and keeps its hostname as `agent-sandbox`, but receives the host's portable
 packages, environment variables, shell settings, and development tools.
 
-The guest excludes macOS-only configuration. It does not receive GUI apps,
-Homebrew casks, `launchd` settings, macOS system defaults, or host secrets.
+The guest excludes macOS-only configuration: GUI apps, Homebrew casks, `launchd`
+settings, and macOS system defaults. Shared modules declare guest credentials
+separately from the host's credentials.
 
 ## Building & running
 
@@ -117,12 +117,9 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   is otherwise stateless (tmpfs root; config comes from the Nix closure), but
   OpenCode sessions/history (`~/.local/share/opencode`) and the VM's gcloud
   configuration (`~/.config/gcloud`) are symlinked onto this volume so they
-  survive `poweroff`. The MacBook-Pro-2 host and work VM declare their
-  `us-docker.pkg.dev` gcloud credential-helper mapping at activation; the
-  Darwin host also selects its OrbStack Docker context.
-  The VM-specific GitHub SSH identity (`~/.ssh/id_ed25519_github` and its
-  public key) and `~/.ssh/known_hosts` are also persisted individually; SSH
-  configuration remains ephemeral.
+  survive `poweroff`.
+  The guest's SOPS age identity persists at
+  `/var/lib/agent-state/sops/age-key.txt`.
 - `~/.local/share/microvm/dev-state.img` — persistent development scratch
   space and caches. It backs `TMPDIR`, `XDG_CACHE_HOME`, and Go's module and
   build caches, plus Docker images, containers, and volumes, so development
@@ -131,10 +128,11 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   and console output.
 - `~/.local/share/microvm/runner` — GC root for the running VM closure.
 
-Note: OpenCode's `auth.json` (API credentials) and gcloud's refresh credentials
-live in the persisted agent state, as does the VM-specific GitHub private key.
-They are separate from the host's credential stores, but the "no secrets in the
-VM" property excludes these VM-specific logins and key.
+Note: OpenCode's login state, gcloud's refresh credentials, and the SOPS age
+identity live in persisted agent state. SOPS provisions the guest's API tokens
+at runtime, including the GitHub token used by `gh` and Git-over-HTTPS. These
+guest credentials are separate from the host's credential stores; the VM
+boundary does not hide guest credentials from guest root.
 
 ## Shares
 
@@ -157,9 +155,12 @@ remote behavior; use `opencode-local` to run OpenCode directly on macOS.
 
 Keep the same directory open in your host editor: you see edits live, intervene
 alongside the agent, and finished work is already in the host repo. Commit,
-branch, and push with normal git habits. The VM has no host SSH credentials, so
-Git pushes normally happen host-side unless its VM-specific GitHub key is
-configured for repository access.
+branch, and push with normal git habits. The Mac uses SSH for GitHub, while the
+VM rewrites GitHub SSH URLs to HTTPS and uses the SOPS-managed `gh` token. Guest
+pushes require the token's repository write permission; stored remotes and the
+shared checkout remain unchanged.
 
-The VM's git identity can commit but cannot sign (no keys in the VM); re-sign
-on the host if you need signed history.
+Git signing is disabled in the VM; re-sign on the host if you need signed history.
+
+See [credential management](../../notes/credentials.md) for authentication,
+rotation, and recovery from old disks.
