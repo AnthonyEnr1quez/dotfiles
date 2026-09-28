@@ -77,6 +77,13 @@ in
             fireworks-ai = mkIf (osConfig.sops.secrets ? fireworks-api-key) {
               options.apiKey = "{file:${osConfig.sops.secrets.fireworks-api-key.path}}";
             };
+            google-vertex = mkIf
+              (osConfig.sops.secrets ? google-vertex-location && osConfig.sops.secrets ? google-vertex-project) {
+              options = {
+                location = "{file:${osConfig.sops.secrets.google-vertex-location.path}}";
+                project = "{file:${osConfig.sops.secrets.google-vertex-project.path}}";
+              };
+            };
             openai = mkIf (osConfig.sops.secrets ? openai-api-key) {
               options.apiKey = "{file:${osConfig.sops.secrets.openai-api-key.path}}";
             };
