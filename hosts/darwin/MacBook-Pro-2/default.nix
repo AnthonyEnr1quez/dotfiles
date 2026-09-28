@@ -59,6 +59,7 @@ let
 in
 {
   sops.secrets = {
+    fireworks-api-key.owner = config.user.name;
     google-vertex-location.owner = config.user.name;
     google-vertex-project.owner = config.user.name;
     honeycomb-api-key.owner = config.user.name;
