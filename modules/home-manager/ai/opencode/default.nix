@@ -71,11 +71,14 @@ in
         settings = {
           # Check the declaration, not a runtime file that is absent in CI.
           provider = {
-            openai = mkIf (osConfig.sops.secrets ? openai-api-key) {
-              options.apiKey = "{file:${osConfig.sops.secrets.openai-api-key.path}}";
-            };
             anthropic = mkIf (osConfig.sops.secrets ? anthropic-api-key) {
               options.apiKey = "{file:${osConfig.sops.secrets.anthropic-api-key.path}}";
+            };
+            fireworks-ai = mkIf (osConfig.sops.secrets ? fireworks-api-key) {
+              options.apiKey = "{file:${osConfig.sops.secrets.fireworks-api-key.path}}";
+            };
+            openai = mkIf (osConfig.sops.secrets ? openai-api-key) {
+              options.apiKey = "{file:${osConfig.sops.secrets.openai-api-key.path}}";
             };
           };
 
