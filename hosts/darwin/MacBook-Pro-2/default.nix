@@ -68,6 +68,13 @@ in
   };
 
   hm = {
+    home.file.".config/opencode/AGENTS.md".source =
+      config.home-manager.users.${config.user.name}.lib.file.mkOutOfStoreSymlink (
+        if pkgs.stdenvNoCC.hostPlatform.isDarwin then
+          "${config.user.home}/Projects/llms/AGENTS.md"
+        else
+          "/root/projects/llms/AGENTS.md"
+      );
     mcp.enable = true;
 
     home = {
