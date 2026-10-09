@@ -8,6 +8,12 @@
 # forward localhost ports, so host commands use the guest's conventional
 # 192.168.64.2 DHCP address.
 { lib, pkgs, config, host, ... }:
+let
+  cgoToolchainKey = builtins.hashString "sha256" "${pkgs.gcc}:${pkgs.gcc.libc}";
+  # The macro makes the Nix C toolchain identity part of Go's cache keys,
+  # refreshing affected CGO artifacts while preserving the shared cache.
+  cgoCFlags = "-O2 -g -DNIX_CGO_TOOLCHAIN_${cgoToolchainKey}=1";
+in
 {
   imports = [ ../common.nix ./secrets.nix ../../hosts/darwin/shared.nix ]
     ++ lib.optional (host != null) (../../hosts/darwin + "/${host}");
@@ -149,6 +155,7 @@
     GOPATH = lib.mkForce "/var/lib/dev-state/go";
     GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
     GOCACHE = "/var/lib/dev-state/cache/go-build";
+    CGO_CFLAGS = cgoCFlags;
     GOTMPDIR = "/var/lib/dev-state/tmp/go";
   };
 
@@ -241,6 +248,7 @@
       GOPATH = "/var/lib/dev-state/go";
       GOMODCACHE = "/var/lib/dev-state/go/pkg/mod";
       GOCACHE = "/var/lib/dev-state/cache/go-build";
+      CGO_CFLAGS = cgoCFlags;
       GOTMPDIR = "/var/lib/dev-state/tmp/go";
       OPENCODE_DISABLE_PROJECT_CONFIG = "1";
     };
