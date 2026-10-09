@@ -17,10 +17,10 @@
     go = {
       enable = true;
       package = pkgs.go_1_27.overrideAttrs (_: rec {
-        version = "1.27.1";
+        version = "1.27.2";
         src = pkgs.fetchurl {
           url = "https://go.dev/dl/go${version}.src.tar.gz";
-          hash = "sha256-TkCKuuEm2Ra2FkYnGT8sVPDjyhMS1pO4bbRfhiqyOLE=";
+          hash = "sha256-A0ldorpkiU1A9cSZLklFT6eLUGkGBP+Stq//UIG3bmI=";
         };
       });
       env.GOPATH = "${config.home.homeDirectory}/go";
