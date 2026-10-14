@@ -128,6 +128,23 @@ State locations on the host (per-user, resolved at launch via `$HOME`):
   and console output.
 - `~/.local/share/microvm/runner` — GC root for the running VM closure.
 
+### Invalid storage attachment at startup
+
+If vfkit reports `VZErrorDomain Code=2` with `The storage device attachment is
+invalid`, check whether a previous VM still has the disk images open:
+
+```sh
+microvm status
+lsof ~/.local/share/microvm/*.img
+```
+
+A failed second launch can overwrite `vfkit.pid` even while the original VM
+is running. The launcher recovers the live runner's PID by checking its process
+name and working directory, serializes launches, and waits for disk attachments
+to close on stop. Use `microvm stop` before starting a replacement VM. If only
+Apple's virtualization helper still holds the images, wait for it to release
+them and retry. Deleting the images would discard persistent VM state.
+
 Note: OpenCode's login state, gcloud's refresh credentials, and the SOPS age
 identity live in persisted agent state. SOPS provisions the guest's API tokens
 at runtime, including the GitHub token used by `gh` and Git-over-HTTPS. These

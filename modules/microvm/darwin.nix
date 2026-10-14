@@ -58,6 +58,17 @@ let
     statedir="$HOME/.local/share/microvm"
     pidfile="$statedir/vfkit.pid"
     logfile="$statedir/vfkit.log"
+    launchlock="$statedir/launch.lock"
+
+    cleanup() {
+      if [ -n "''${saved_tty:-}" ]; then
+        stty "$saved_tty" || true
+      fi
+      if [ "''${launch_locked:-false}" = true ]; then
+        rm -f "$launchlock"
+      fi
+    }
+    trap cleanup EXIT
 
     usage() {
       cat <<'EOF'
@@ -74,15 +85,40 @@ let
     EOF
     }
 
-    running() {
-      [ -r "$pidfile" ] || return 1
-      IFS= read -r pid < "$pidfile"
+    vm_process() {
       [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || return 1
       command="$(/bin/ps -p "$pid" -o command= 2>/dev/null)" || return 1
       case "$command" in
         *vfkit*|*microvm-run*|*microvm@agent-sandbox*) return 0 ;;
         *) return 1 ;;
       esac
+    }
+
+    running() {
+      pid=""
+      if [ -r "$pidfile" ]; then
+        IFS= read -r pid < "$pidfile" || true
+        vm_process && return 0
+      fi
+
+      # vfkit writes its PID before validating the VM. A failed second launch
+      # can overwrite the live VM's PID, so also discover our runner by cwd.
+      while IFS= read -r pid; do
+        vm_process || continue
+        cwd="$(/usr/sbin/lsof -a -p "$pid" -d cwd -Fn 2>/dev/null)" || continue
+        case "$cwd" in
+          *$'\n'"n$statedir")
+            printf '%s\n' "$pid" > "$pidfile"
+            return 0
+            ;;
+        esac
+      done < <(/usr/bin/pgrep -f '^microvm@agent-sandbox( |$)' || true)
+      return 1
+    }
+
+    disks_in_use() {
+      /usr/sbin/lsof -t -- "$statedir/nix-store-overlay.img" \
+        "$statedir/agent-state.img" "$statedir/dev-state.img" 2>/dev/null
     }
 
     healthy() {
@@ -96,6 +132,12 @@ let
         echo "agent-sandbox is already running (PID $pid)." >&2
         return 1
       fi
+      disk_pids="$(disks_in_use)" || true
+      if [ -n "$disk_pids" ]; then
+        echo "VM disk images are still in use by PID(s): $disk_pids" >&2
+        echo "Wait for the previous VM to shut down before retrying." >&2
+        return 1
+      fi
       rm -f "$pidfile"
 
       echo "Building/substituting agent-sandbox micro VM for ${host}..." >&2
@@ -104,6 +146,24 @@ let
         "${flakeRef}#${runnerAttr}"
       cd "$statedir"
     }
+
+    # Serialize launches, including image creation and the PID-file update.
+    # shlock recovers locks left by dead launchers. Stop remains available while
+    # a foreground run holds the launch lock.
+    case "''${1:-help}" in
+      start|run)
+        mkdir -p "$statedir"
+        if ! /usr/bin/shlock -p "$$" -f "$launchlock"; then
+          if [ "$1" = start ] && running && healthy; then
+            echo "agent-sandbox is already running (PID $pid)." >&2
+            exit 0
+          fi
+          echo "Another VM launch is in progress; use microvm status or retry shortly." >&2
+          exit 1
+        fi
+        launch_locked=true
+        ;;
+    esac
 
     case "''${1:-help}" in
       start)
@@ -137,7 +197,6 @@ let
       run)
         prepare
         saved_tty="$(stty -g)"
-        trap 'stty "$saved_tty"' EXIT
         stty intr undef quit undef susp undef
         "$runner/bin/microvm-run"
         ;;
@@ -149,11 +208,13 @@ let
         fi
         kill -INT "$pid"
         for ((attempt = 0; attempt < 30; attempt++)); do
-          running || break
+          if ! running && ! disks_in_use >/dev/null; then
+            break
+          fi
           sleep 1
         done
-        if running; then
-          echo "Timed out stopping agent-sandbox (PID $pid)." >&2
+        if running || disks_in_use >/dev/null; then
+          echo "Timed out stopping agent-sandbox or releasing its disk images." >&2
           exit 1
         fi
         rm -f "$pidfile"
