@@ -35,6 +35,10 @@ in
       enable = true;
       package = pkgs.firefox-bin;
 
+      # macOS 27 blocks Nix-wrapped Firefox from accessing Mozilla's data directory.
+      # Migrate existing data before switching: https://github.com/NixOS/nixpkgs/issues/535123
+      configPath = mkIf pkgs.stdenv.hostPlatform.isDarwin "Library/Application Support/org.nixos.firefox";
+
       profiles.default = {
         isDefault = true;
 
