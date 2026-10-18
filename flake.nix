@@ -92,9 +92,6 @@
                     nur.overlays.default
                     nix-vscode-extensions.overlays.default
                   ];
-                  home-manager.sharedModules = [
-                    nur.modules.homeManager.default
-                  ];
                 }
             )
             ./modules/darwin
