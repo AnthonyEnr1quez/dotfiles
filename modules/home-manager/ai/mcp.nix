@@ -19,10 +19,12 @@ in
         oauth = false;
         headers.Authorization = "Bearer {file:${osConfig.sops.secrets.honeycomb-api-key.path}}";
       };
-      incident-io = {
+      incident-io = mkIf (osConfig.sops.secrets ? incident-io-api-key) {
         type = "remote";
         url = "https://mcp.incident.io/mcp";
-        enabled = false;
+        enabled = true;
+        oauth = false;
+        headers.Authorization = "Bearer {file:${osConfig.sops.secrets.incident-io-api-key.path}}";
       };
       linear = mkIf (osConfig.sops.secrets ? linear-api-key) {
         type = "remote";

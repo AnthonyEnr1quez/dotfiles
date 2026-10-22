@@ -63,6 +63,7 @@ in
     google-vertex-location.owner = config.user.name;
     google-vertex-project.owner = config.user.name;
     honeycomb-api-key.owner = config.user.name;
+    incident-io-api-key.owner = config.user.name;
     linear-api-key.owner = config.user.name;
     postman-api-key.owner = config.user.name;
   };

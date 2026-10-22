@@ -38,7 +38,7 @@ age key lives on the agent-state disk, which mounts before activation.
 
 All four Mac/guest files currently require `openai-api-key`, `anthropic-api-key`,
 and `github-token`. The work pair also declares `honeycomb-api-key`,
-`linear-api-key`, and `postman-api-key`.
+`linear-api-key`, `incident-io-api-key`, and `postman-api-key`.
 
 Add a system secret alongside its consumer's configuration, for example:
 
