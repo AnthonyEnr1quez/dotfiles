@@ -66,7 +66,16 @@ in
           # use-modern-go = "${go-modern-guidelines}/claude/modern-go-guidelines/skills/use-modern-go";
         };
 
-        tui.scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
+        tui = {
+          # The pinned Catppuccin module's v2 config merge drops its v1 theme.
+          theme = mkIf (config.catppuccin.enable && config.catppuccin.opencode.enable) (
+            {
+              frappe = "catppuccin-frappe";
+              macchiato = "catppuccin-macchiato";
+            }.${config.catppuccin.opencode.flavor} or "catppuccin"
+          );
+          scroll_acceleration.enabled = true; # Enable macOS-style smooth scroll acceleration
+        };
 
         settings = {
           # Check the declaration, not a runtime file that is absent in CI.
