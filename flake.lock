@@ -207,6 +207,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-opencode": {
+      "locked": {
+        "lastModified": 1791684702,
+        "narHash": "sha256-seAXTQmAjSZPeF0Sm/QL/cU+453kBP32kJhg3huXH1E=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "00cc1f9df5e7599bad5d459d3e500e779eff1195",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "00cc1f9df5e7599bad5d459d3e500e779eff1195",
+        "type": "github"
+      }
+    },
     "nur": {
       "inputs": {
         "flake-parts": [
@@ -241,6 +257,7 @@
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs",
+        "nixpkgs-opencode": "nixpkgs-opencode",
         "nur": "nur",
         "sops-nix": "sops-nix",
         "stable": "stable",

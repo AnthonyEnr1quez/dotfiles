@@ -12,6 +12,12 @@
 
   nixpkgs.config.allowUnfree = true;
 
+  nixpkgs.overlays = [
+    (final: prev: {
+      opencode = inputs.nixpkgs-opencode.legacyPackages.${final.stdenv.hostPlatform.system}.opencode;
+    })
+  ];
+
   user = {
     home = "${
         if pkgs.stdenvNoCC.hostPlatform.isDarwin then "/Users" else "/home"
