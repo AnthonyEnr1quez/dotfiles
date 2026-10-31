@@ -24,7 +24,7 @@
     stable.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     # Keep OpenCode on v1 until we're ready to migrate to v2.
-    nixpkgs-opencode.url = "github:NixOS/nixpkgs/00cc1f9df5e7599bad5d459d3e500e779eff1195";
+    nixpkgs-opencode.url = "github:NixOS/nixpkgs/0fb9b63eea6aac82767ef23820a20f5c49e2a35f";
 
     systems.url = "github:nix-systems/default";
     flake-parts.url = "github:hercules-ci/flake-parts";
