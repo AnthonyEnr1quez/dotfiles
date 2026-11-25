@@ -1,10 +1,10 @@
 { config, pkgs, lib, ... }:
 let
   goland = pkgs.jetbrains.goland.overrideAttrs (_: rec {
-    version = "2026.3";
+    version = "2026.3.0.1";
     src = pkgs.fetchurl {
       url = "https://download.jetbrains.com/go/goland-${version}-aarch64.dmg";
-      hash = "sha256-j4NyfH3Qy91Qv6DkPMgeRP4NTeHnb2NLGaNlzHyGeCc=";
+      hash = "sha256-QjU3/ZW3fDskQ8Jy7cI6znrkohV2pkJ6EhHfudoc0TI=";
     };
   });
 in
